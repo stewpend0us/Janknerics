@@ -7,10 +7,10 @@ using System.Reflection;
 namespace Janknerics.Tests
 {
     [TestClass]
-    public class JanknericsTests
+    public partial class JanknericsTests
     {
         [TestMethod]
-        public void SimpleGeneratorTest()
+        public void NothingTest()
         {
             // Create the 'input' compilation that the generator will act on
             Compilation inputCompilation = CreateCompilation(
@@ -39,28 +39,23 @@ namespace Janknerics.Tests
 
             // We can now assert things about the resulting compilation:
             Debug.Assert(diagnostics.IsEmpty); // there were no diagnostics created by the generators
-            Debug.Assert(outputCompilation.SyntaxTrees.Count() == 2); // we have two syntax trees, the original 'user' provided one, and the one added by the generator
+            Debug.Assert(outputCompilation.SyntaxTrees.Count() == 1); // we have two syntax trees, the original 'user' provided one, and the one added by the generator
             Debug.Assert(outputCompilation.GetDiagnostics().IsEmpty); // verify the compilation with the added source has no diagnostics
 
             // Or we can look at the results directly:
             GeneratorDriverRunResult runResult = driver.GetRunResult();
 
             // The runResult contains the combined results of all generators passed to the driver
-            Debug.Assert(runResult.GeneratedTrees.Length == 1);
+            Debug.Assert(runResult.GeneratedTrees.Length == 0);
             Debug.Assert(runResult.Diagnostics.IsEmpty);
 
             // Or you can access the individual results on a by-generator basis
             GeneratorRunResult generatorResult = runResult.Results[0];
             //Debug.Assert(generatorResult.Generator == generator);
             Debug.Assert(generatorResult.Diagnostics.IsEmpty);
-            Debug.Assert(generatorResult.GeneratedSources.Length == 1);
+            Debug.Assert(generatorResult.GeneratedSources.Length == 0);
             Debug.Assert(generatorResult.Exception is null);
         }
 
-        private static CSharpCompilation CreateCompilation(string source)
-            => CSharpCompilation.Create("compilation",
-                [CSharpSyntaxTree.ParseText(source)],
-                [MetadataReference.CreateFromFile(typeof(Binder).GetTypeInfo().Assembly.Location)],
-                new CSharpCompilationOptions(OutputKind.ConsoleApplication));
     }
 }
