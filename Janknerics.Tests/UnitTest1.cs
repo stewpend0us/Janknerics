@@ -2,9 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
-using Janknerics;
 
 namespace Janknerics.Tests
 {
