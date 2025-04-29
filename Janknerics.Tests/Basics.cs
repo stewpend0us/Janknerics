@@ -9,19 +9,21 @@ namespace Janknerics.Tests
     public partial class JanknericsTests
     {
         [TestMethod]
-        public void NothingTest()
+        public void BasicsTest()
         {
             // Create the 'input' compilation that the generator will act on
             Compilation inputCompilation = CreateCompilation(
                 """
                 namespace MyCode
                 {
-                    public class Program
-                    {
-                        public static void Main(string[] args)
-                        {
-                        }
-                    }
+                   partial class GeneratedClass;
+
+                   [Jankneric(typeof(GeneratedClass))]
+                   class TemplateClass
+                   {
+                       [Jankneric(typeof(GeneratedClass), typeof(double))]
+                       public float P1;
+                   }
                 }
                 """);
 
