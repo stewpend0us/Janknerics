@@ -22,6 +22,7 @@
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <DevelopmentDependency>true</DevelopmentDependency>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
     
     <ItemGroup>

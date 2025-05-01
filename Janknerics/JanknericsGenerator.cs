@@ -1,8 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace Janknerics
@@ -14,7 +12,7 @@ namespace Janknerics
         {
             var classDeclarations = context.SyntaxProvider
                 .CreateSyntaxProvider(
-                    predicate: static (s, _) => s is ClassDeclarationSyntax c && c.AttributeLists.Count > 0,
+                    predicate: static (s, _) => s is ClassDeclarationSyntax { AttributeLists.Count: > 0 },
                     transform: static (ctx, _) => (ClassDeclarationSyntax)ctx.Node
                 )
                 .Where(static m => m is not null);
@@ -26,11 +24,27 @@ namespace Janknerics
 
         private void Execute(Compilation compilation, IReadOnlyList<ClassDeclarationSyntax> classes, SourceProductionContext context)
         {
+            JanknericsRewriter rewriter = new JanknericsRewriter();
+            
             foreach (var candidate in classes)
             {
+                rewriter.Visit(candidate);
+                context.AddSource(rewriter.SourceName, rewriter.Source);
+                /*
+                var attrs = candidate.AttributeLists
+                    .Where(list => list.Attributes
+                        .Where(attr => attr.Name.ToString() == "Jankneric")
+                        .Where(attr => (attr.Parent as ClassDeclarationSyntax).Members
+                            .Where(m => m.AttributeLists
+                                .Where(attrr => attrr.Attributes
+                                    .Where(attrrr => attrrr.Name.ToString() == "Jankneric")))));
+                if (!attrs.Any())
+                    continue;
+
+                //if (viable(candidate))
                 var model = compilation.GetSemanticModel(candidate.SyntaxTree);
 
-                var classSymbol = model.GetDeclaredSymbol(candidate) as INamedTypeSymbol;
+                var classSymbol = model.GetDeclaredSymbol(candidate);
                 if (classSymbol == null)
                     continue;
 
@@ -118,6 +132,8 @@ namespace Janknerics
 
                     context.AddSource($"{targetClassName}_jankneric.g.cs", sb.ToString());
                 }
+                
+                */
             }
         }
     }

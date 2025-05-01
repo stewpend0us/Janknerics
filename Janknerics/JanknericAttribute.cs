@@ -1,5 +1,3 @@
-using System;
-
 namespace Janknerics
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = true)]
