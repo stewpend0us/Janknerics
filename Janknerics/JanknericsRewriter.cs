@@ -1,31 +1,46 @@
 using System.Reflection;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Janknerics;
 
-public class NewClassSpec(
-    TypeDeclarationSyntax sourceSyntax,
-    TypeSyntax destinationType,
-    TypeSyntax? constructorArgument)
-{
-    public TypeDeclarationSyntax Spec = sourceSyntax;
-    public TypeSyntax Destination = destinationType;
-    public TypeSyntax? ConstructorArgument = constructorArgument;
-}
-
-public class JanknericsRewriter : CSharpSyntaxVisitor
+public sealed class JanknericsRewriter : CSharpSyntaxRewriter
 {
 
-    private TypeSyntax CheckArgument(AttributeArgumentSyntax argument)
+    private static readonly JanknericsRewriter Rewriter = new ();
+    public static void Rewrite(TypeDeclarationSyntax node, Action<string, string> writer)
+    {
+        Rewriter._sourceName = string.Empty;
+        
+        var result = Rewriter.Visit(node);
+        
+        if (Rewriter._constructorArgType is not null)
+            result = ApplyConstructor(result, (SyntaxToken)Rewriter._constructorArgType);
+        
+        if (Rewriter._sourceName != string.Empty)
+            writer(Rewriter._sourceName, result.ToString());
+    }
+
+    private static SyntaxNode ApplyConstructor(SyntaxNode result, SyntaxToken constructorArgType)
+    {
+        // TODO
+        return result;
+    }
+
+    private SyntaxToken? _constructorArgType;
+    
+    private string _sourceName = "";
+
+    private SyntaxToken CheckArgument(AttributeArgumentSyntax argument)
     {
         if (argument.Expression is not TypeOfExpressionSyntax typeOfExpression)
             throw new CustomAttributeFormatException(
                 "All arguments of Jankneric attribute must be 'typeof' expression");
-        return typeOfExpression.Type;
+        return SyntaxFactory.Identifier(typeOfExpression.Type.ToString());
     }
 
-    private void VisitTypeDeclaration(TypeDeclarationSyntax node)
+    private TypeDeclarationSyntax? VisitTypeDeclaration(TypeDeclarationSyntax node)
     {
         foreach (var attributeList in node.AttributeLists)
         {
@@ -37,8 +52,8 @@ public class JanknericsRewriter : CSharpSyntaxVisitor
                     throw new CustomAttributeFormatException("Jankneric attribute must have at least one argument");
                 if (attr.ArgumentList.Arguments.Count > 2)
                     throw new CustomAttributeFormatException("Jankneric attribute must have at most two arguments");
-                TypeSyntax destinationType;
-                TypeSyntax? constructorArgType = null;
+                SyntaxToken destinationType;
+                _constructorArgType = null;
                 if (attr.ArgumentList.Arguments.Count == 1)
                 {
                     destinationType = CheckArgument(attr.ArgumentList.Arguments[0]);
@@ -46,19 +61,32 @@ public class JanknericsRewriter : CSharpSyntaxVisitor
                 else
                 {
                     destinationType = CheckArgument(attr.ArgumentList.Arguments[0]);
-                    constructorArgType = CheckArgument(attr.ArgumentList.Arguments[1]);
+                    _constructorArgType = CheckArgument(attr.ArgumentList.Arguments[1]);
                 }
-
-                SourceName = destinationType.ToString() + ".g.cs";
-                Source = "//hello!";
+                _sourceName = destinationType + ".g.cs";
+                node = node
+                    .WithIdentifier(destinationType);
             }
         }
+        return _sourceName == string.Empty ? null : node;
     }
 
-    public string SourceName { get; private set; } = "";
-    public string Source { get; private set; } = "";
+    public override SyntaxNode? VisitAttribute(AttributeSyntax node)
+    {
+        if (node.Name.ToString() != "Jankneric")
+            return base.VisitAttribute(node);
+        // TODO also remove the []
+        return null;
+    }
 
-
-    public override void VisitClassDeclaration(ClassDeclarationSyntax node) => VisitTypeDeclaration(node);
-    public override void VisitStructDeclaration(StructDeclarationSyntax node) => VisitTypeDeclaration(node);
+    public override SyntaxNode? VisitClassDeclaration(ClassDeclarationSyntax node)
+    {
+        var result = VisitTypeDeclaration(node);
+        return result is null ? null : base.VisitClassDeclaration((ClassDeclarationSyntax)result);
+    }
+    public override SyntaxNode? VisitStructDeclaration(StructDeclarationSyntax node)
+    {
+        var result = VisitTypeDeclaration(node);
+        return result is null ? null : base.VisitStructDeclaration((StructDeclarationSyntax)result);
+    }
 }

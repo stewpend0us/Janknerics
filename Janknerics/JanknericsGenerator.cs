@@ -1,7 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Text;
 
 namespace Janknerics
 {
@@ -24,12 +22,11 @@ namespace Janknerics
 
         private void Execute(Compilation compilation, IReadOnlyList<ClassDeclarationSyntax> classes, SourceProductionContext context)
         {
-            JanknericsRewriter rewriter = new JanknericsRewriter();
             
             foreach (var candidate in classes)
             {
-                rewriter.Visit(candidate);
-                context.AddSource(rewriter.SourceName, rewriter.Source);
+                JanknericsRewriter.Rewrite(candidate, context.AddSource);
+                
                 /*
                 var attrs = candidate.AttributeLists
                     .Where(list => list.Attributes

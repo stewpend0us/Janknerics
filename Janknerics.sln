@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Janknerics", "Janknerics\Ja
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Janknerics.Tests", "Janknerics.Tests\Janknerics.Tests.csproj", "{26B1F689-FF6C-499B-93FB-A19AA474944F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Janknerics.Generated.Viewer", "Janknerics.Generated.Viewer\Janknerics.Generated.Viewer.csproj", "{22BCCA41-1E73-41A0-9C3A-E339183B8FD0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{26B1F689-FF6C-499B-93FB-A19AA474944F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{26B1F689-FF6C-499B-93FB-A19AA474944F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{26B1F689-FF6C-499B-93FB-A19AA474944F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22BCCA41-1E73-41A0-9C3A-E339183B8FD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22BCCA41-1E73-41A0-9C3A-E339183B8FD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22BCCA41-1E73-41A0-9C3A-E339183B8FD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22BCCA41-1E73-41A0-9C3A-E339183B8FD0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
