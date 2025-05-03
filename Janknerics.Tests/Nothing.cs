@@ -2,7 +2,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Diagnostics;
-using System.Reflection;
 
 namespace Janknerics.Tests
 {
@@ -14,15 +13,15 @@ namespace Janknerics.Tests
             // Create the 'input' compilation that the generator will act on
             Compilation inputCompilation = CreateCompilation(
                 """
-                namespace MyCode
-                {
+                namespace MyCode;
+                //{
                     public class Program
                     {
                         public static void Main(string[] args)
                         {
                         }
                     }
-                }
+                //}
                 """);
 
             // directly create an instance of the generator

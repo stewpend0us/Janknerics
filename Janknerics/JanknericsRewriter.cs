@@ -9,17 +9,20 @@ public sealed class JanknericsRewriter : CSharpSyntaxRewriter
 {
 
     private static readonly JanknericsRewriter Rewriter = new ();
-    public static void Rewrite(TypeDeclarationSyntax node, Action<string, string> writer)
+    public static void Rewrite(BaseNamespaceDeclarationSyntax ns, Action<string, string> writer)
     {
         Rewriter._sourceName = string.Empty;
         
-        var result = Rewriter.Visit(node);
+        var result = Rewriter.Visit(ns);
+
+        if (Rewriter._sourceName == string.Empty)
+            return;
         
         if (Rewriter._constructorArgType is not null)
             result = ApplyConstructor(result, (SyntaxToken)Rewriter._constructorArgType);
-        
-        if (Rewriter._sourceName != string.Empty)
-            writer(Rewriter._sourceName, result.ToString());
+
+        var source = result.NormalizeWhitespace().ToString();
+        writer(Rewriter._sourceName, source);
     }
 
     private static SyntaxNode ApplyConstructor(SyntaxNode result, SyntaxToken constructorArgType)
@@ -42,43 +45,48 @@ public sealed class JanknericsRewriter : CSharpSyntaxRewriter
 
     private TypeDeclarationSyntax? VisitTypeDeclaration(TypeDeclarationSyntax node)
     {
+        TypeDeclarationSyntax? result = null;
+        // figure out if it's marked with any Jankneric attributes
         foreach (var attributeList in node.AttributeLists)
         {
-            foreach (var attr in attributeList.Attributes)
+            var janknericEnumerable = attributeList.Attributes.Where(attr => attr.Name.ToString() == "Jankneric");
+            var janknericAttributes = janknericEnumerable as AttributeSyntax[] ?? janknericEnumerable.ToArray();
+
+            foreach (var attributeGroup in janknericAttributes
+                         .Where(attr => attr.ArgumentList is not null)
+                         .GroupBy(attr => attr.ArgumentList!.Arguments.Count))
             {
-                if (attr.Name.ToString() != "Jankneric")
-                    continue;
-                if (attr.ArgumentList is null || attr.ArgumentList.Arguments.Count == 0)
-                    throw new CustomAttributeFormatException("Jankneric attribute must have at least one argument");
-                if (attr.ArgumentList.Arguments.Count > 2)
-                    throw new CustomAttributeFormatException("Jankneric attribute must have at most two arguments");
-                SyntaxToken destinationType;
-                _constructorArgType = null;
-                if (attr.ArgumentList.Arguments.Count == 1)
+                switch (attributeGroup.Key) // Count
                 {
-                    destinationType = CheckArgument(attr.ArgumentList.Arguments[0]);
+                    case 0:
+                        throw new CustomAttributeFormatException("Jankneric attribute must have at least one argument");
+                    default:
+                        throw new CustomAttributeFormatException("Jankneric attribute must have at most two arguments");
+                    case 1 or 2:
+                    {
+                        foreach (var syntax in attributeGroup)
+                        {
+                            var destinationType = CheckArgument(syntax.ArgumentList!.Arguments[0]);
+                            _constructorArgType = attributeGroup.Key > 1
+                                ? CheckArgument(syntax.ArgumentList.Arguments[1])
+                                : null;
+                            _sourceName = destinationType + ".g.cs";
+                            node = node
+                                .WithIdentifier(destinationType)
+                                .AddModifiers(
+                                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                                    SyntaxFactory.Token(SyntaxKind.PartialKeyword));
+                            result = result is null ? node : result.AddMembers(node);
+                        }
+                        break;
+                    }
                 }
-                else
-                {
-                    destinationType = CheckArgument(attr.ArgumentList.Arguments[0]);
-                    _constructorArgType = CheckArgument(attr.ArgumentList.Arguments[1]);
-                }
-                _sourceName = destinationType + ".g.cs";
-                node = node
-                    .WithIdentifier(destinationType);
             }
         }
-        return _sourceName == string.Empty ? null : node;
+        
+        return result;
     }
-
-    public override SyntaxNode? VisitAttribute(AttributeSyntax node)
-    {
-        if (node.Name.ToString() != "Jankneric")
-            return base.VisitAttribute(node);
-        // TODO also remove the []
-        return null;
-    }
-
+    
     public override SyntaxNode? VisitClassDeclaration(ClassDeclarationSyntax node)
     {
         var result = VisitTypeDeclaration(node);
@@ -88,5 +96,24 @@ public sealed class JanknericsRewriter : CSharpSyntaxRewriter
     {
         var result = VisitTypeDeclaration(node);
         return result is null ? null : base.VisitStructDeclaration((StructDeclarationSyntax)result);
+    }
+
+    public override SyntaxNode? VisitAttributeList(AttributeListSyntax node)
+    {
+        // if they're all Jankneric Attributes then we remove the whole list
+        if (node.Attributes.All(attr => attr.Name.ToString() == "Jankneric"))
+            return null;
+        
+        // otherwise we remove only the Jankneric attributes from the list
+        foreach (var attribute in node.Attributes.Where(attr => attr.Name.ToString() == "Jankneric"))
+        {
+            var result = node.RemoveNode(attribute, SyntaxRemoveOptions.KeepNoTrivia);
+            if (result is null)
+                return null; //TODO error??
+            node = result;
+        }
+
+        // continue the recursion
+        return base.VisitAttributeList(node);
     }
 }

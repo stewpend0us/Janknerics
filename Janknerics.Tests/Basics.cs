@@ -15,8 +15,8 @@ namespace Janknerics.Tests
             Compilation inputCompilation = CreateCompilation(
                 """
                 using Janknerics;
-                namespace MyCode
-                {
+                namespace MyCode;
+                //{
                    public class Program
                    {
                        public static void Main(string[] args)
@@ -24,15 +24,20 @@ namespace Janknerics.Tests
                        }
                    }
                    
-                   partial class GeneratedClass;
+                   public partial class GeneratedClass;
 
                    [Jankneric(typeof(GeneratedClass))]
                    class TemplateClass
                    {
                        [Jankneric(typeof(GeneratedClass), typeof(double))]
                        public float P1 = 0;
-                   }
-                }
+                   };
+                   
+                   public partial class SomeOtherClass
+                   {
+                       public float Prop = 0;
+                   };
+                //}
                 """);
 
             // directly create an instance of the generator

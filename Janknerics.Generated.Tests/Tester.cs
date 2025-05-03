@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Janknerics.Generated.Tests;
@@ -9,8 +11,13 @@ public class Tester
     [DataRow(typeof(GeneratedClass1), typeof(ExpectedClass1))]
     public void Test(Type generated, Type expected)
     {
-        var gp = generated.GetMembers();
-        var ep = expected.GetMembers();
+        var gps = generated.GetMembers();
+        var eps = expected.GetMembers();
+        Debug.Assert(gps.Length == eps.Length);
+        foreach (var gp in gps.Where(m => m is not MethodInfo or ConstructorInfo))
+        {
+            Debug.Assert(eps.Any(exp=> exp.Name == gp.Name));
+        }
         //var ga= generated.GetGenericArguments();
         //var ea= expected.GetGenericArguments();
         //var gc= generated.GetGenericParameterConstraints();
