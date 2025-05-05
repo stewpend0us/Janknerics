@@ -2,18 +2,18 @@ namespace Janknerics.Generated.Tests;
 using Janknerics;
 
 // the class to be written by Janknerics
-public partial class GeneratedClass1;
+public partial class GeneratedClass;
 
 // the class to be used as a template by Janknerics
-[Jankneric(typeof(GeneratedClass1))]
-class TemplateClass1
+[Jankneric(typeof(GeneratedClass))]
+class TemplateClass
 {
-    [Jankneric(typeof(GeneratedClass1), typeof(double))]
+    [Jankneric(typeof(GeneratedClass), typeof(double))]
     public float P1 = 0;
 };
 
 // the expected output of Janknerics
-partial class ExpectedClass1
+class ExpectedClass
 {
     public double P1 = 0;
 };

@@ -20,11 +20,21 @@ namespace Janknerics
             context.RegisterSourceOutput(compilationAndClasses, (spc, source) => Execute(source.Left, source.Right, spc));
         }
 
+        private readonly Locator _locator = new ();
+        
         private void Execute(Compilation compilation, IReadOnlyList<BaseNamespaceDeclarationSyntax> namespaces, SourceProductionContext context)
         {
             foreach (var ns in namespaces)
             {
-                JanknericsRewriter.Rewrite(ns,context.AddSource);
+                if (_locator.Visit(ns) is { } templates)
+                {
+                    foreach (var t in templates)
+                    {
+                        if (t is null)
+                            continue;
+                        context.AddSource(t.Identifier.ToString() + ".g.cs", t.ToString());
+                    }
+                }
             }
         }
     }
