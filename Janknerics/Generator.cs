@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Janknerics
@@ -20,21 +21,26 @@ namespace Janknerics
             context.RegisterSourceOutput(compilationAndClasses, (spc, source) => Execute(source.Left, source.Right, spc));
         }
 
+        
         private readonly Locator _locator = new ();
         
         private void Execute(Compilation compilation, IReadOnlyList<BaseNamespaceDeclarationSyntax> namespaces, SourceProductionContext context)
         {
             foreach (var ns in namespaces)
             {
-                if (_locator.Visit(ns) is { } templates)
-                {
-                    foreach (var t in templates)
+                if (_locator.Visit(ns) is not { } templates)
+                    continue;
+                foreach (var t in templates)
+                    if (t is not null)
                     {
-                        if (t is null)
-                            continue;
-                        context.AddSource(t.Identifier.ToString() + ".g.cs", t.ToString());
+                        var src = ns
+                            .WithMembers(new(t))
+                            .NormalizeWhitespace()
+                            .ToString();
+
+                        var id = t.Identifier + ".g.cs";
+                        context.AddSource(id, src);
                     }
-                }
             }
         }
     }

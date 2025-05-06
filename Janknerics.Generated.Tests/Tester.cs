@@ -11,6 +11,7 @@ public class Tester
     [DataRow(typeof(GeneratedClass), typeof(ExpectedClass))]
     [DataRow(typeof(GeneratedClass1), typeof(ExpectedClass1))]
     [DataRow(typeof(GeneratedClass2), typeof(ExpectedClass2))]
+    [DataRow(typeof(GeneratedClass3), typeof(ExpectedClass3))]
     public void Test(Type generated, Type expected)
     {
         var gps = generated.GetMembers();

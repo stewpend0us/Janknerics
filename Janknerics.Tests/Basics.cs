@@ -24,11 +24,15 @@ namespace Janknerics.Tests
                 {
                     [Jankneric(typeof(GeneratedClass), typeof(double))]
                     public float P1 = 0;
+                    
+                    [Jankneric(typeof(GeneratedClass), typeof(int))]
+                    public double P2 {get; set;} = 4;
                 };
                 
                 public partial class SomeOtherClass
                 {
                     public float Prop = 0;
+                    public int P2 {get; set;} = 4;
                 };
                 """);
 

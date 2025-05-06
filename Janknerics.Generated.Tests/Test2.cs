@@ -1,5 +1,4 @@
 namespace Janknerics.Generated.Tests;
-using Janknerics;
 
 // the class to be written by Janknerics
 public partial class GeneratedClass1;
