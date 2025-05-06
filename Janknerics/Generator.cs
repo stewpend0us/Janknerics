@@ -22,13 +22,13 @@ namespace Janknerics
         }
 
         
-        private readonly Locator _locator = new ();
+        private readonly Rewriter _rewriter = new ();
         
         private void Execute(Compilation compilation, IReadOnlyList<BaseNamespaceDeclarationSyntax> namespaces, SourceProductionContext context)
         {
             foreach (var ns in namespaces)
             {
-                if (_locator.Visit(ns) is not { } templates)
+                if (_rewriter.Visit(ns) is not { } templates)
                     continue;
                 foreach (var t in templates)
                     if (t is not null)

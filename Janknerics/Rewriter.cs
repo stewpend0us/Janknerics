@@ -10,7 +10,7 @@ namespace Janknerics;
 /// 1) locate any types that contain Jankneric attributes
 /// 2) break the types up as needed until there is 1 TypdDeclarationSyntax per generated type
 /// </summary>
-public class Locator : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
+public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
 {
     /// <summary>
     /// visit all members of any BaseNamespaceDeclarationSyntax we encounter
@@ -20,12 +20,10 @@ public class Locator : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
     public override IEnumerable<TypeDeclarationSyntax>? DefaultVisit(SyntaxNode node)
     {
         if (node is BaseNamespaceDeclarationSyntax ns)
-        {
             foreach (var m in ns.Members)
                 if (base.Visit(m) is { } visited)
                     foreach (var v in visited)
                         yield return v;
-        }
 
         if (base.DefaultVisit(node) is { } result)
             foreach (var r in result)
@@ -112,20 +110,18 @@ public class Locator : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
         return (T)node.WithAttributeLists(attributes);
     }
 
-    private static FieldDeclarationSyntax Rewrite(FieldDeclarationSyntax node, SyntaxList<TypeSyntax> destinationType)
+    private static MemberDeclarationSyntax Rewrite(MemberDeclarationSyntax node, SyntaxList<TypeSyntax> destinationType)
     {
         if (destinationType.Count != 1)
             throw new CustomAttributeFormatException("Field declaration must have only one type after the key");
-        return node.WithDeclaration(node.Declaration.WithType(destinationType[0]));
+        return node switch
+        {
+            FieldDeclarationSyntax field => field.WithDeclaration(field.Declaration.WithType(destinationType[0])),
+            PropertyDeclarationSyntax property => property.WithType(destinationType[0]),
+            _ => node
+        };
     }
     
-    private static PropertyDeclarationSyntax Rewrite(PropertyDeclarationSyntax node, SyntaxList<TypeSyntax> destinationType)
-    {
-        if (destinationType.Count != 1)
-            throw new CustomAttributeFormatException("Field declaration must have only one type after the key");
-        return node.WithType(destinationType[0]);
-    }
-
     /// <summary>
     /// iterate through and re-write or remove each member of the Type
     /// </summary>
@@ -141,15 +137,7 @@ public class Locator : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
             var newMember = Pop(member, out var janknericAttributes);
             if (!janknericAttributes.TryGetValue(destinationType, out var attributes))
                 continue;
-
-            newMember = newMember switch
-            {
-                FieldDeclarationSyntax field => Rewrite(field, attributes),
-                PropertyDeclarationSyntax property => Rewrite(property, attributes),
-                _ => newMember
-            };
-
-            members = members.Add(newMember);
+            members = members.Add(Rewrite(newMember, attributes));
         }
 
         return node
