@@ -20,14 +20,10 @@ public class Locator : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
     public override IEnumerable<TypeDeclarationSyntax>? DefaultVisit(SyntaxNode node)
     {
         if (node is BaseNamespaceDeclarationSyntax ns)
-        {
             foreach (var m in ns.Members)
-            {
                 if (base.Visit(m) is { } visit)
                     foreach (var v in visit)
                         yield return v;
-            }
-        }
 
         if (base.DefaultVisit(node) is { } result)
             foreach (var r in result)
@@ -111,7 +107,13 @@ public class Locator : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
     private static TypeDeclarationSyntax Rewrite(TypeDeclarationSyntax node, SyntaxToken destinationType, SyntaxTokenList args)
     {
         // TODO remove/modify members with Jankneric Attributes
-        
+        foreach (var member in node.Members)
+        {
+            foreach (var list in member.AttributeLists)
+            {
+                
+            }
+        }
         //foreach (var member in node.AttributeLists)
         return node.WithIdentifier(destinationType)
             .AddModifiers(
