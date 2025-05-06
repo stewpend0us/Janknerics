@@ -25,6 +25,7 @@ class ExpectedClass
 {
     public double P1 = 0;
     public int P2 { get; set; }  = 4;
+    public string P3 { get; set; }  = "4";
 };
 
 [TestClass]

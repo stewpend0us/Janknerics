@@ -112,6 +112,8 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
 
     private static MemberDeclarationSyntax Rewrite(MemberDeclarationSyntax node, SyntaxList<TypeSyntax> destinationType)
     {
+        if (destinationType.Count == 0)
+            return node;
         if (destinationType.Count != 1)
             throw new CustomAttributeFormatException("Field declaration must have only one type after the key");
         return node switch
