@@ -27,6 +27,9 @@ namespace Janknerics.Tests
                     
                     [Jankneric(typeof(GeneratedClass), typeof(int))]
                     public double P2 {get; set;} = 4;
+                    
+                    [Jankneric(typeof(GeneratedClass))]
+                    public string P3 { get; set; }  = "4";
                 };
                 
                 public partial class SomeOtherClass
