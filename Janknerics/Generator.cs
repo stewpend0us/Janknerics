@@ -28,6 +28,10 @@ namespace Janknerics
         {
             foreach (var ns in namespaces)
             {
+                bool hasNullableEnabled = ns
+                    .DescendantTrivia()
+                    .Any(t => t.IsKind(SyntaxKind.SingleLineCommentTrivia) && 
+                              t.ToString().Contains("#nullable enable"));
                 if (_rewriter.Visit(ns) is not { } templates)
                     continue;
                 foreach (var t in templates)

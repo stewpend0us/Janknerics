@@ -7,6 +7,7 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,4 +22,9 @@
         <ProjectReference Include="..\Janknerics\Janknerics.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Include="..\Janknerics.Test.Classes\*.cs" LinkBase="Classes">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Compile>
+    </ItemGroup>
 </Project>

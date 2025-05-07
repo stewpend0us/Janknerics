@@ -55,18 +55,26 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
     private SyntaxList<TypeSyntax> CheckArguments(SeparatedSyntaxList<AttributeArgumentSyntax> arguments) =>
         new (arguments.Select(CheckArgument));
 
-    private AttributeSyntax? Pop(AttributeSyntax node, ref Dictionary<TypeSyntax, SyntaxList<TypeSyntax>> janknericAttributes)
+    /// <summary>
+    /// if the attribute is a Jankneric add it to the dictionary and return null
+    /// otherwise keep it
+    /// </summary>
+    /// <param name="attribute"></param>
+    /// <param name="janknericAttributes"></param>
+    /// <returns></returns>
+    /// <exception cref="CustomAttributeFormatException"></exception>
+    private AttributeSyntax? Pop(AttributeSyntax attribute, ref Dictionary<TypeSyntax, SyntaxList<TypeSyntax>> janknericAttributes)
     {
-        if (node.Name.ToString() != "Jankneric")
-            return node;
+        if (attribute.Name.ToString() != "Jankneric")
+            return attribute;
         
         // must have arguments
-        if (node.ArgumentList is null || node.ArgumentList.Arguments.Count == 0)
+        if (attribute.ArgumentList is null || attribute.ArgumentList.Arguments.Count == 0)
             throw new CustomAttributeFormatException("JanknericAttribute has no arguments");
         
         // verify the attribute arguments have the right type
         // and organize them into a dictionary where the first argumetn is the key and the remaining arguments are the value
-        var attributeArguments = node.ArgumentList.Arguments;
+        var attributeArguments = attribute.ArgumentList.Arguments;
         var key = CheckArgument(attributeArguments[0]);
         if (janknericAttributes.ContainsKey(key))
             throw new CustomAttributeFormatException($"Multiple JanknericAttribute with key '{key}' on the same member");
@@ -74,15 +82,24 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
         return null; // consume the attribute
     }
     
-    private AttributeListSyntax Pop(AttributeListSyntax node, ref Dictionary<TypeSyntax, SyntaxList<TypeSyntax>> janknericAttributes)
+    /// <summary>
+    /// remove any Jankneric attributes from the list
+    /// </summary>
+    /// <param name="list"></param>
+    /// <param name="janknericAttributes"></param>
+    /// <returns></returns>
+    private AttributeListSyntax Pop(AttributeListSyntax list, ref Dictionary<TypeSyntax, SyntaxList<TypeSyntax>> janknericAttributes)
     {
         var result = SyntaxFactory.AttributeList();
-        foreach (var attribute in node.Attributes)
+        foreach (var attribute in list.Attributes)
             if (Pop(attribute, ref janknericAttributes) is { } newAttribute)
                 result = result.AddAttributes(newAttribute);
         return result;
     }
     
+    /// <summary>
+    /// compare TypeSyntax using their string representation
+    /// </summary>
     private class CompareTypeSyntax : IEqualityComparer<TypeSyntax>
     {
         public bool Equals(TypeSyntax x, TypeSyntax y) => x.ToString() == y.ToString();
@@ -113,13 +130,19 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
     private static MemberDeclarationSyntax Rewrite(MemberDeclarationSyntax node, SyntaxList<TypeSyntax> destinationType)
     {
         if (destinationType.Count == 0)
-            return node;
+            return node; // 'passthrough' case
         if (destinationType.Count != 1)
             throw new CustomAttributeFormatException("Field declaration must have only one type after the key");
+        var type = destinationType[0];
+        if (!type.IsKind(SyntaxKind.PredefinedType))
+        {
+            // TODO do need to do something smarter with reference types?
+            // the attributes on the expected class have a nullable but the generated type doesn't for the CustomTypeTestClasses
+        }
         return node switch
         {
-            FieldDeclarationSyntax field => field.WithDeclaration(field.Declaration.WithType(destinationType[0])),
-            PropertyDeclarationSyntax property => property.WithType(destinationType[0]),
+            FieldDeclarationSyntax field => field.WithDeclaration(field.Declaration.WithType(type)),
+            PropertyDeclarationSyntax property => property.WithType(type),
             _ => node
         };
     }
@@ -142,12 +165,20 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
             members = members.Add(Rewrite(newMember, attributes));
         }
 
+        List<SyntaxToken> modifiersToAdd = [];
+        AddIfAbsent(SyntaxKind.PublicKeyword);
+        AddIfAbsent(SyntaxKind.PartialKeyword);
+        
         return node
             .WithMembers(members)
             .WithIdentifier(SyntaxFactory.Identifier(destinationType.ToString()))
-            .AddModifiers(
-                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                SyntaxFactory.Token(SyntaxKind.PartialKeyword));
+            .AddModifiers(modifiersToAdd.ToArray());
+
+        void AddIfAbsent(SyntaxKind kind)
+        {
+            if (!node.Modifiers.Any(m => m.IsKind(kind)))
+                modifiersToAdd.Add(SyntaxFactory.Token(kind));
+        }
     }
 
     public override IEnumerable<TypeDeclarationSyntax>? VisitClassDeclaration(ClassDeclarationSyntax node) =>

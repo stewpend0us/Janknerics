@@ -1,15 +1,15 @@
-﻿namespace Janknerics.Generated.Tests.Classes;
+﻿namespace Janknerics.Test.Classes;
 
 public partial class PassthroughTestGenerated;
 
 [Jankneric(typeof(PassthroughTestGenerated))]
-class PassthroughTestTemplate
+public class PassthroughTestTemplate
 {
     [Jankneric(typeof(PassthroughTestGenerated))]
     public string P { get; set; }  = "";
 }
 
-class PassthroughTestExpected
+public class PassthroughTestExpected
 {
     public string P { get; set; }  = "";
 };

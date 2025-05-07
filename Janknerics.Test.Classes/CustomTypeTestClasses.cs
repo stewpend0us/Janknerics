@@ -1,15 +1,17 @@
-﻿namespace Janknerics.Generated.Tests.Classes;
+﻿namespace Janknerics.Test.Classes;
+
+public interface IExampleInterface;
 public partial class CustomTypeTestGenerated;
 
 // the class to be used as a template by Janknerics
 [Jankneric(typeof(CustomTypeTestGenerated))]
-class CustomTypeTestTemplate
+public class CustomTypeTestTemplate
 {
     [Jankneric(typeof(CustomTypeTestGenerated), typeof(IExampleInterface))]
     public float F;
 };
 
-class CustomTypeTestExpected
+public class CustomTypeTestExpected
 {
     public IExampleInterface F;
 };

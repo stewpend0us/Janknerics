@@ -1,4 +1,4 @@
-using Janknerics.Generated.Tests.Classes;
+using Janknerics.Test.Classes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Janknerics.Generated.Tests;
