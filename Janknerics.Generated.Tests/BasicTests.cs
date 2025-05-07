@@ -16,41 +16,41 @@ public class BasicTests
     [TestMethod]
     public void TestField()
     {
-        FieldTestTemplate t = new();
+        FieldTemplate t = new();
         RunTest(()=>t.F, 0.0f);
         
-        FieldTestGenerated g = new ();
+        FieldGenerated g = new ();
         RunTest(()=>g.F, 0.0);
     }
     
     [TestMethod]
     public void TestProperty()
     {
-        PropertyTestTemplate t = new ();
+        PropertyTemplate t = new ();
         RunTest(()=>t.P, 0.0f);
         
-        PropertyTestGenerated g = new ();
+        PropertyGenerated g = new ();
         RunTest(()=>g.P, 0);
     }
     
     [TestMethod]
     public void TestPassthrough()
     {
-        PassthroughTestTemplate t = new ();
+        PassthroughTemplate t = new ();
         RunTest(()=>t.P, "");
         
-        PassthroughTestGenerated g = new ();
+        PassthroughGenerated g = new ();
         RunTest(()=>g.P, "");
     }
     
     [TestMethod]
     public void TestMultiple()
     {
-        MultipleTestTemplate t = new ();
+        MultipleTemplate t = new ();
         RunTest(()=>t.F, 0.0f);
         
-        MultipleTestGenerated1 g1 = new ();
-        MultipleTestGenerated2 g2 = new ();
+        MultipleGenerated1 g1 = new ();
+        MultipleGenerated2 g2 = new ();
         RunTest(()=>g1.F, 0.0);
         RunTest(()=>g2.F, 0);
     }
@@ -58,23 +58,23 @@ public class BasicTests
     [TestMethod]
     public void TestCustomType()
     {
-        CustomTypeTestTemplate t = new ();
+        CustomTypeTemplate t = new ();
         Assert.IsInstanceOfType<float>(t.F);
         
-        CustomTypeTestGenerated g = new ();
-        Assert.AreEqual(typeof(IExampleInterface), typeof(CustomTypeTestGenerated).GetField("F")?.FieldType);
+        CustomTypeGenerated g = new ();
+        Assert.AreEqual(typeof(IExampleInterface), typeof(CustomTypeGenerated).GetField("F")?.FieldType);
     }
 
     [TestMethod]
     public void TestMultiTemplate()
     {
-        MultiTemplateTestTemplate1 t1 = new ();
-        MultiTemplateTestTemplate2 t2 = new ();
+        MultiTemplateTemplate1 t1 = new ();
+        MultiTemplateTemplate2 t2 = new ();
         RunTest(()=>t1.F, 0.0f);
         RunTest(()=>t2.F, 0);
         
-        MultiTemplateTestGenerated1 g1 = new ();
-        MultiTemplateTestGenerated2 g2 = new ();
+        MultiTemplateGenerated1 g1 = new ();
+        MultiTemplateGenerated2 g2 = new ();
         RunTest(()=>g1.F, 0.0);
         RunTest(()=>g2.F, 0L);
     }

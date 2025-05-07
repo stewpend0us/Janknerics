@@ -7,12 +7,13 @@ public class BasicTests
 {
     [DataTestMethod]
     [DataRow(null, 0, 0)]
-    [DataRow("FieldTestClasses.cs", 1, 0)]
-    [DataRow("PropertyTestClasses.cs", 1, 0)]
-    [DataRow("PassthroughTestClasses.cs", 1, 0)]
-    [DataRow("MultipleTestClasses.cs", 2, 0)]
-    [DataRow("CustomTypeTestClasses.cs", 1, 0)]
-    [DataRow("MultiTemplateTestClasses.cs", 2, 0)]
+    [DataRow("SingleField.cs", 1, 0)]
+    [DataRow("SingleProperty.cs", 1, 0)]
+    [DataRow("PassthroughField.cs", 1, 0)]
+    [DataRow("MultipleTemplates.cs", 2, 0)]
+    [DataRow("CustomType.cs", 1, 0)]
+    [DataRow("GenerateMultiple.cs", 2, 0)]
+    [DataRow("MissingClassAttribute.cs", 1, 0)]
     public void Test(string? filename, int expectedTrees, int expectedDiagnostics)
     {
         // Create the 'input' compilation that the generator will act on

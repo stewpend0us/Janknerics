@@ -12,6 +12,13 @@ namespace Janknerics;
 /// </summary>
 public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
 {
+
+    //private static readonly DiagnosticDescriptor RuleTest = new DiagnosticDescriptor("JANK0000","title","format","category",DiagnosticSeverity.Warning, true);
+    private static readonly DiagnosticDescriptor RuleNotAType = new DiagnosticDescriptor("JANK0001","JanknericAttribute Arguments","All arguments of Jankneric Attribute must be of type 'Type'","JanknericAttribute", DiagnosticSeverity.Error, true);
+    
+        
+    public Action<Diagnostic>? ReportDiagnostic { get; set; }
+
     /// <summary>
     /// visit all members of any BaseNamespaceDeclarationSyntax we encounter
     /// </summary>
@@ -44,16 +51,16 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
             yield return Rewrite(node, kv.Key, kv.Value);
     }
 
-    private TypeSyntax CheckArgument(AttributeArgumentSyntax argument)
+    private TypeSyntax? CheckArgument(AttributeArgumentSyntax argument)
     {
-            if (argument.Expression is not TypeOfExpressionSyntax typeOfExpression)
-                throw new CustomAttributeFormatException(
-                    "All arguments of Jankneric attribute must be 'typeof' expression");
+        if (argument.Expression is TypeOfExpressionSyntax typeOfExpression)
             return typeOfExpression.Type;
+        ReportDiagnostic?.Invoke(Diagnostic.Create(RuleNotAType, Location.None));
+        return null;
     }
 
     private SyntaxList<TypeSyntax> CheckArguments(SeparatedSyntaxList<AttributeArgumentSyntax> arguments) =>
-        new (arguments.Select(CheckArgument));
+        new (arguments.Select(CheckArgument).OfType<TypeSyntax>());
 
     /// <summary>
     /// if the attribute is a Jankneric add it to the dictionary and return null

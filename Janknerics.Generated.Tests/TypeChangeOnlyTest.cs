@@ -8,16 +8,22 @@ namespace Janknerics.Generated.Tests;
 public class TypeChangeOnlyTest
 {
     [DataTestMethod]
-    [DataRow(typeof(FieldTestGenerated), typeof(FieldTestGenerated))]
-    [DataRow(typeof(PropertyTestGenerated), typeof(PropertyTestExpected))]
-    [DataRow(typeof(PassthroughTestGenerated), typeof(PassthroughTestExpected))]
-    [DataRow(typeof(MultipleTestGenerated1), typeof(MultipleTestExpected1))]
-    [DataRow(typeof(MultipleTestGenerated2), typeof(MultipleTestExpected2))]
-    [DataRow(typeof(CustomTypeTestGenerated), typeof(CustomTypeTestExpected))]
-    [DataRow(typeof(MultiTemplateTestGenerated1), typeof(MultiTemplateTestExpected1))]
-    [DataRow(typeof(MultiTemplateTestGenerated2), typeof(MultiTemplateTestExpected2))]
-    public void Test(Type generated, Type expected)
+    [DataRow(typeof(FieldExpected), typeof(FieldGenerated))]
+    [DataRow(typeof(PropertyExpected), typeof(PropertyGenerated))]
+    [DataRow(typeof(PassthroughExpected), typeof(PassthroughGenerated))]
+    [DataRow(typeof(MultipleExpected1), typeof(MultipleGenerated1))]
+    [DataRow(typeof(MultipleExpected2), typeof(MultipleGenerated2))]
+    [DataRow(typeof(CustomTypeExpected), typeof(CustomTypeGenerated))]
+    [DataRow(typeof(MultiTemplateExpected1), typeof(MultiTemplateGenerated1))]
+    [DataRow(typeof(MultiTemplateExpected2), typeof(MultiTemplateGenerated2))]
+    [DataRow(typeof(MissingClassAttributeExpected), typeof(MissingClassAttributeGenerated))]
+    public void Test(Type expected, Type generated)
     {
+        // check for typos
+        StringAssert.Contains(expected.FullName, "Expected");
+        StringAssert.Contains(generated.FullName, "Generated");
+        
+        // then check for 'equality'
         var gps = generated.GetMembers();
         var eps = expected.GetMembers();
         Assert.AreEqual(eps.Length, gps.Length);

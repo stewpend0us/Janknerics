@@ -26,6 +26,7 @@ namespace Janknerics
         
         private void Execute(Compilation compilation, IReadOnlyList<BaseNamespaceDeclarationSyntax> namespaces, SourceProductionContext context)
         {
+            _rewriter.ReportDiagnostic = context.ReportDiagnostic;
             foreach (var ns in namespaces)
             {
                 bool hasNullableEnabled = ns
