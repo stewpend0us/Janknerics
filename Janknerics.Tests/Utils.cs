@@ -2,15 +2,12 @@ using System.Collections.Immutable;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Janknerics.Tests;
 
-[TestClass]
-public partial class JanknericsTests
+public class Utils
 {
-    private static GeneratorDriverRunResult Compile(Compilation inputCompilation, out Compilation outputCompilation, out ImmutableArray<Diagnostic> diagnostics)
+    public static GeneratorDriverRunResult Compile(Compilation inputCompilation, out Compilation outputCompilation, out ImmutableArray<Diagnostic> diagnostics)
     {
         
         var generator = new JanknericsGenerator();
@@ -23,7 +20,7 @@ public partial class JanknericsTests
         return driver.RunGeneratorsAndUpdateCompilation(inputCompilation, out outputCompilation, out diagnostics).GetRunResult();
     }
     
-    private static CSharpCompilation CreateCompilation(string source = "")
+    public static CSharpCompilation CreateCompilation(string? file = null)
     {
 
         const string main = """
@@ -35,6 +32,8 @@ public partial class JanknericsTests
                                 }
                             }
                             """;
+
+        var source = file is null ? "" : File.ReadAllText(Path.Join(Directory.GetCurrentDirectory(), "Classes", file));
         
         var basePath = Path.GetDirectoryName(typeof(object).Assembly.Location);
         var netstandardPath = Path.Join(basePath, "netstandard.dll");

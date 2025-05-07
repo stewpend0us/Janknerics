@@ -18,4 +18,10 @@
       <ProjectReference Include="..\Janknerics\Janknerics.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Include="..\Janknerics.Generated.Tests\Classes\*.cs" LinkBase="Classes">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Compile>
+    </ItemGroup>
+
 </Project>
