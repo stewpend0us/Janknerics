@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Reflection;
 using Janknerics.Generated.Tests.Classes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -12,16 +11,17 @@ public class Tester
     [DataRow(typeof(FieldTestGenerated), typeof(FieldTestGenerated))]
     [DataRow(typeof(PropertyTestGenerated), typeof(PropertyTestExpected))]
     [DataRow(typeof(PassthroughTestGenerated), typeof(PassthroughTestExpected))]
-    [DataRow(typeof(GeneratedClass3), typeof(ExpectedClass3))]
+    [DataRow(typeof(MultipleTestGenerated1), typeof(MultipleTestExpected1))]
+    [DataRow(typeof(MultipleTestGenerated2), typeof(MultipleTestExpected2))]
+    [DataRow(typeof(CustomTypeTestGenerated), typeof(CustomTypeTestExpected))]
     public void Test(Type generated, Type expected)
     {
         var gps = generated.GetMembers();
         var eps = expected.GetMembers();
-        Debug.Assert(gps.Length == eps.Length);
-        foreach (var gp in gps.Where(m => m is not MethodInfo or ConstructorInfo))
+        Assert.AreEqual(eps.Length, gps.Length);
+        for (int i = 0; i < eps.Length; i++)
         {
-            Debug.Assert(eps
-                .Any(exp=> exp.Name == gp.Name));
+            Assert.AreEqual(eps[i].Name, gps[i].Name);
         }
         //var ga= generated.GetGenericArguments();
         //var ea= expected.GetGenericArguments();
