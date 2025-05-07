@@ -64,4 +64,18 @@ public class BasicTests
         CustomTypeTestGenerated g = new ();
         Assert.AreEqual(typeof(IExampleInterface), typeof(CustomTypeTestGenerated).GetField("F")?.FieldType);
     }
+
+    [TestMethod]
+    public void TestMultiTemplate()
+    {
+        MultiTemplateTestTemplate1 t1 = new ();
+        MultiTemplateTestTemplate2 t2 = new ();
+        RunTest(()=>t1.F, 0.0f);
+        RunTest(()=>t2.F, 0);
+        
+        MultiTemplateTestGenerated1 g1 = new ();
+        MultiTemplateTestGenerated2 g2 = new ();
+        RunTest(()=>g1.F, 0.0);
+        RunTest(()=>g2.F, 0L);
+    }
 }

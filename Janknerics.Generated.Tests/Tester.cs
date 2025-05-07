@@ -14,6 +14,8 @@ public class Tester
     [DataRow(typeof(MultipleTestGenerated1), typeof(MultipleTestExpected1))]
     [DataRow(typeof(MultipleTestGenerated2), typeof(MultipleTestExpected2))]
     [DataRow(typeof(CustomTypeTestGenerated), typeof(CustomTypeTestExpected))]
+    [DataRow(typeof(MultiTemplateTestGenerated1), typeof(MultiTemplateTestExpected1))]
+    [DataRow(typeof(MultiTemplateTestGenerated2), typeof(MultiTemplateTestExpected2))]
     public void Test(Type generated, Type expected)
     {
         var gps = generated.GetMembers();
