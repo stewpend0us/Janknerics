@@ -14,8 +14,10 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
 {
 
     //private static readonly DiagnosticDescriptor RuleTest = new DiagnosticDescriptor("JANK0000","title","format","category",DiagnosticSeverity.Warning, true);
-    private static readonly DiagnosticDescriptor RuleNotAType = new DiagnosticDescriptor("JANK0001","JanknericAttribute Arguments","All arguments of Jankneric Attribute must be of type 'Type'","JanknericAttribute", DiagnosticSeverity.Error, true);
-    
+    private static readonly DiagnosticDescriptor RuleNotAType = new DiagnosticDescriptor("JANK0001",$"{nameof(JanknericAttribute)} Arguments with wrong type",$"All arguments of {nameof(JanknericAttribute)} must be of type 'Type'","JanknericAttribute", DiagnosticSeverity.Error, true);
+    private static readonly DiagnosticDescriptor RuleNoArguments = new DiagnosticDescriptor("JANK0002",$"{nameof(JanknericAttribute)} with no arguments",$"{nameof(JanknericAttribute)} must have at least one argument","JanknericAttribute", DiagnosticSeverity.Error, true);
+    private static readonly DiagnosticDescriptor RuleDuplicateKey = new DiagnosticDescriptor("JANK0003",$"Duplicate {nameof(JanknericAttribute)}",$"First argument of {nameof(JanknericAttribute)} must be unique on a given type","JanknericAttribute", DiagnosticSeverity.Error, true);
+    private static readonly DiagnosticDescriptor RuleTwoArguments = new DiagnosticDescriptor("JANK0004",$"{nameof(JanknericAttribute)} with more than two arguments",$"{nameof(JanknericAttribute)} can have at most two arguments","JanknericAttribute", DiagnosticSeverity.Error, true);
         
     public Action<Diagnostic>? ReportDiagnostic { get; set; }
 
@@ -45,7 +47,11 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
     /// <returns></returns>
     private IEnumerable<TypeDeclarationSyntax> VisitTypeDeclaration(TypeDeclarationSyntax node)
     {
-        node = Pop(node, out var janknericAttributes);
+
+        Dictionary<TypeSyntax, SyntaxList<TypeSyntax>> janknericAttributes;// = new(TypeSyntaxComparer);
+        node = Pop(node, out janknericAttributes);
+        //foreach (var m in node.Members)
+        //    Pop(m, ref janknericAttributes);
 
         foreach (var kv in janknericAttributes)
             yield return Rewrite(node, kv.Key, kv.Value);
@@ -77,14 +83,21 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
         
         // must have arguments
         if (attribute.ArgumentList is null || attribute.ArgumentList.Arguments.Count == 0)
-            throw new CustomAttributeFormatException("JanknericAttribute has no arguments");
-        
+        {
+            ReportDiagnostic?.Invoke(Diagnostic.Create(RuleNoArguments, Location.None));
+            return attribute; // leave the error in the generated code
+        }
+
         // verify the attribute arguments have the right type
         // and organize them into a dictionary where the first argumetn is the key and the remaining arguments are the value
         var attributeArguments = attribute.ArgumentList.Arguments;
         var key = CheckArgument(attributeArguments[0]);
         if (janknericAttributes.ContainsKey(key))
-            throw new CustomAttributeFormatException($"Multiple JanknericAttribute with key '{key}' on the same member");
+        {
+            ReportDiagnostic?.Invoke(Diagnostic.Create(RuleDuplicateKey, Location.None));
+            return attribute; // leave the error in the generated code
+        }
+
         janknericAttributes[key] = CheckArguments(attributeArguments.RemoveAt(0));
         return null; // consume the attribute
     }
@@ -134,12 +147,15 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
         return (T)node.WithAttributeLists(attributes);
     }
 
-    private static MemberDeclarationSyntax Rewrite(MemberDeclarationSyntax node, SyntaxList<TypeSyntax> destinationType)
+    private MemberDeclarationSyntax Rewrite(MemberDeclarationSyntax node, SyntaxList<TypeSyntax> destinationType)
     {
         if (destinationType.Count == 0)
             return node; // 'passthrough' case
         if (destinationType.Count != 1)
-            throw new CustomAttributeFormatException("Field declaration must have only one type after the key");
+        {
+            ReportDiagnostic?.Invoke(Diagnostic.Create(RuleTwoArguments, Location.None));
+            return node;
+        }
         var type = destinationType[0];
         if (!type.IsKind(SyntaxKind.PredefinedType))
         {
@@ -163,13 +179,14 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
     /// <returns></returns>
     private TypeDeclarationSyntax Rewrite(TypeDeclarationSyntax node, TypeSyntax destinationType, SyntaxList<TypeSyntax> args)
     {
-        SyntaxList<MemberDeclarationSyntax> members = [];
+        SyntaxList<MemberDeclarationSyntax> newMembers = [];
         foreach (var member in node.Members)
         {
-            var newMember = Pop(member, out var janknericAttributes);
+            Dictionary<TypeSyntax, SyntaxList<TypeSyntax>> janknericAttributes;// = new(TypeSyntaxComparer);
+            var newMember = Pop(member, out janknericAttributes);
             if (!janknericAttributes.TryGetValue(destinationType, out var attributes))
                 continue;
-            members = members.Add(Rewrite(newMember, attributes));
+            newMembers = newMembers.Add(Rewrite(newMember, attributes));
         }
 
         List<SyntaxToken> modifiersToAdd = [];
@@ -177,7 +194,7 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
         AddIfAbsent(SyntaxKind.PartialKeyword);
         
         return node
-            .WithMembers(members)
+            .WithMembers(newMembers)
             .WithIdentifier(SyntaxFactory.Identifier(destinationType.ToString()))
             .AddModifiers(modifiersToAdd.ToArray());
 
