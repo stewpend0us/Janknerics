@@ -10,7 +10,7 @@ namespace Janknerics;
 /// 1) locate any types that contain Jankneric attributes
 /// 2) break the types up as needed until there is 1 TypdDeclarationSyntax per generated type
 /// </summary>
-public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
+public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax?>>
 {
 
     //private static readonly DiagnosticDescriptor RuleTest = new DiagnosticDescriptor("JANK0000","title","format","category",DiagnosticSeverity.Warning, true);
@@ -19,14 +19,25 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
     private static readonly DiagnosticDescriptor RuleDuplicateKey = new DiagnosticDescriptor("JANK0003",$"Duplicate {nameof(JanknericAttribute)}",$"First argument of {nameof(JanknericAttribute)} must be unique on a given type","JanknericAttribute", DiagnosticSeverity.Error, true);
     private static readonly DiagnosticDescriptor RuleTwoArguments = new DiagnosticDescriptor("JANK0004",$"{nameof(JanknericAttribute)} with more than two arguments",$"{nameof(JanknericAttribute)} can have at most two arguments","JanknericAttribute", DiagnosticSeverity.Error, true);
         
-    public Action<Diagnostic>? ReportDiagnostic { get; set; }
+    public static Action<Diagnostic>? ReportDiagnostic { get; set; }
+
+    /// <summary>
+    /// compare TypeSyntax using their string representation
+    /// </summary>
+    private class CompareTypeSyntax : IEqualityComparer<TypeSyntax>
+    {
+        public bool Equals(TypeSyntax x, TypeSyntax y) => x.ToString() == y.ToString();
+        public int GetHashCode(TypeSyntax obj) => obj.ToString().GetHashCode();
+    }
+
+    private static readonly CompareTypeSyntax TypeSyntaxComparer = new();
 
     /// <summary>
     /// visit all members of any BaseNamespaceDeclarationSyntax we encounter
     /// </summary>
     /// <param name="node"></param>
     /// <returns></returns>
-    public override IEnumerable<TypeDeclarationSyntax>? DefaultVisit(SyntaxNode node)
+    public override IEnumerable<TypeDeclarationSyntax?> DefaultVisit(SyntaxNode node)
     {
         if (node is BaseNamespaceDeclarationSyntax ns)
             foreach (var m in ns.Members)
@@ -34,9 +45,9 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
                     foreach (var v in visited)
                         yield return v;
 
-        if (base.DefaultVisit(node) is { } result)
-            foreach (var r in result)
-                yield return r;
+        //if (base.DefaultVisit(node) is { } result)
+        //    foreach (var r in result)
+        //        yield return r;
     }
 
     /// <summary>
@@ -45,16 +56,30 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
     /// </summary>
     /// <param name="node"></param>
     /// <returns></returns>
-    private IEnumerable<TypeDeclarationSyntax> VisitTypeDeclaration(TypeDeclarationSyntax node)
+    private IEnumerable<TypeDeclarationSyntax?> VisitTypeDeclaration(TypeDeclarationSyntax node)
     {
-
-        Dictionary<TypeSyntax, SyntaxList<TypeSyntax>> janknericAttributes;// = new(TypeSyntaxComparer);
-        node = Pop(node, out janknericAttributes);
-        //foreach (var m in node.Members)
-        //    Pop(m, ref janknericAttributes);
-
+        node = ExtractJank(node, out var janknericAttributes);
         foreach (var kv in janknericAttributes)
-            yield return Rewrite(node, kv.Key, kv.Value);
+            yield return Rewrite(node, kv);
+    }
+
+    /// <summary>
+    /// Remove any Jankneric attributes from the node
+    /// </summary>
+    /// <param name="node"></param>
+    /// <param name="janknericAttributes"></param>
+    /// <returns></returns>
+    private T ExtractJank<T>(T node, out Dictionary<TypeSyntax, GeneratedClassSpec> janknericAttributes) where T : MemberDeclarationSyntax
+    {
+        janknericAttributes = new (TypeSyntaxComparer);
+        SyntaxList<AttributeListSyntax> attributes = [];
+        foreach (var attributeList in node.AttributeLists)
+        {
+            var newAttributes = ExtractJank(attributeList, ref janknericAttributes);
+            if (newAttributes.Attributes.Any())
+                attributes.Add(newAttributes);
+        }
+        return (T)node.WithAttributeLists(attributes);
     }
 
     private TypeSyntax? CheckArgument(AttributeArgumentSyntax argument)
@@ -76,7 +101,7 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
     /// <param name="janknericAttributes"></param>
     /// <returns></returns>
     /// <exception cref="CustomAttributeFormatException"></exception>
-    private AttributeSyntax? Pop(AttributeSyntax attribute, ref Dictionary<TypeSyntax, SyntaxList<TypeSyntax>> janknericAttributes)
+    private AttributeSyntax? ExtractJank(AttributeSyntax attribute, ref Dictionary<TypeSyntax, GeneratedClassSpec> janknericAttributes)
     {
         if (attribute.Name.ToString() != "Jankneric")
             return attribute;
@@ -108,45 +133,15 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
     /// <param name="list"></param>
     /// <param name="janknericAttributes"></param>
     /// <returns></returns>
-    private AttributeListSyntax Pop(AttributeListSyntax list, ref Dictionary<TypeSyntax, SyntaxList<TypeSyntax>> janknericAttributes)
+    private AttributeListSyntax ExtractJank(AttributeListSyntax list, ref Dictionary<TypeSyntax, GeneratedClassSpec> janknericAttributes)
     {
         var result = SyntaxFactory.AttributeList();
         foreach (var attribute in list.Attributes)
-            if (Pop(attribute, ref janknericAttributes) is { } newAttribute)
+            if (ExtractJank(attribute, ref janknericAttributes) is { } newAttribute)
                 result = result.AddAttributes(newAttribute);
         return result;
     }
     
-    /// <summary>
-    /// compare TypeSyntax using their string representation
-    /// </summary>
-    private class CompareTypeSyntax : IEqualityComparer<TypeSyntax>
-    {
-        public bool Equals(TypeSyntax x, TypeSyntax y) => x.ToString() == y.ToString();
-        public int GetHashCode(TypeSyntax obj) => obj.ToString().GetHashCode();
-    }
-
-    private static readonly CompareTypeSyntax TypeSyntaxComparer = new();
-
-    /// <summary>
-    /// Remove any Jankneric attributes from the node
-    /// </summary>
-    /// <param name="node"></param>
-    /// <param name="janknericAttributes"></param>
-    /// <returns></returns>
-    private T Pop<T>(T node, out Dictionary<TypeSyntax, SyntaxList<TypeSyntax>> janknericAttributes) where T : MemberDeclarationSyntax
-    {
-        janknericAttributes = new (TypeSyntaxComparer);
-        SyntaxList<AttributeListSyntax> attributes = [];
-        foreach (var attributeList in node.AttributeLists)
-        {
-            var newAttributes = Pop(attributeList, ref janknericAttributes);
-            if (newAttributes.Attributes.Any())
-                attributes.Add(newAttributes);
-        }
-        return (T)node.WithAttributeLists(attributes);
-    }
-
     private MemberDeclarationSyntax Rewrite(MemberDeclarationSyntax node, SyntaxList<TypeSyntax> destinationType)
     {
         if (destinationType.Count == 0)
@@ -177,13 +172,13 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
     /// <param name="destinationType"></param>
     /// <param name="args"></param>
     /// <returns></returns>
-    private TypeDeclarationSyntax Rewrite(TypeDeclarationSyntax node, TypeSyntax destinationType, SyntaxList<TypeSyntax> args)
+    private TypeDeclarationSyntax Rewrite(TypeDeclarationSyntax node, KeyValuePair<TypeSyntax, GeneratedClassSpec> entry)
     {
         SyntaxList<MemberDeclarationSyntax> newMembers = [];
         foreach (var member in node.Members)
         {
-            Dictionary<TypeSyntax, SyntaxList<TypeSyntax>> janknericAttributes;// = new(TypeSyntaxComparer);
-            var newMember = Pop(member, out janknericAttributes);
+            Dictionary<TypeSyntax, GeneratedClassSpec> janknericAttributes;// = new(TypeSyntaxComparer);
+            var newMember = ExtractJank(member, out janknericAttributes);
             if (!janknericAttributes.TryGetValue(destinationType, out var attributes))
                 continue;
             newMembers = newMembers.Add(Rewrite(newMember, attributes));
@@ -205,15 +200,15 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>>
         }
     }
 
-    public override IEnumerable<TypeDeclarationSyntax>? VisitClassDeclaration(ClassDeclarationSyntax node) =>
+    public override IEnumerable<TypeDeclarationSyntax?>? VisitClassDeclaration(ClassDeclarationSyntax node) =>
         VisitTypeDeclaration(node);   
 
-    public override IEnumerable<TypeDeclarationSyntax>? VisitStructDeclaration(StructDeclarationSyntax node) =>
+    public override IEnumerable<TypeDeclarationSyntax?>? VisitStructDeclaration(StructDeclarationSyntax node) =>
         VisitTypeDeclaration(node);
 
-    public override IEnumerable<TypeDeclarationSyntax>? VisitInterfaceDeclaration(InterfaceDeclarationSyntax node) =>
+    public override IEnumerable<TypeDeclarationSyntax?>? VisitInterfaceDeclaration(InterfaceDeclarationSyntax node) =>
         VisitTypeDeclaration(node);
 
-    public override IEnumerable<TypeDeclarationSyntax>? VisitRecordDeclaration(RecordDeclarationSyntax node) =>
+    public override IEnumerable<TypeDeclarationSyntax?>? VisitRecordDeclaration(RecordDeclarationSyntax node) =>
         VisitTypeDeclaration(node);
 }

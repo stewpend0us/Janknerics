@@ -9,43 +9,43 @@ namespace Janknerics
     {
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            var classDeclarations = context.SyntaxProvider
+            var namespaceDeclarations = context.SyntaxProvider
                 .CreateSyntaxProvider(
                     predicate: static (s, _) => s is BaseNamespaceDeclarationSyntax,
                     transform: static (ctx, _) => (BaseNamespaceDeclarationSyntax)ctx.Node
-                )
-                .Where(static m => m is not null);
+                );
 
-            var compilationAndClasses = context.CompilationProvider.Combine(classDeclarations.Collect());
+            //var compilationAndNamespaces= context.CompilationProvider.Combine(namespaceDeclarations.Collect());
 
-            context.RegisterSourceOutput(compilationAndClasses, (spc, source) => Execute(source.Left, source.Right, spc));
+            context.RegisterSourceOutput(namespaceDeclarations.Collect(), (spc, source) => Execute(source, spc));
         }
 
         
         private readonly Rewriter _rewriter = new ();
         
-        private void Execute(Compilation compilation, IReadOnlyList<BaseNamespaceDeclarationSyntax> namespaces, SourceProductionContext context)
+        private void Execute(IReadOnlyList<BaseNamespaceDeclarationSyntax> namespaces, SourceProductionContext context)
         {
             _rewriter.ReportDiagnostic = context.ReportDiagnostic;
             foreach (var ns in namespaces)
             {
-                bool hasNullableEnabled = ns
-                    .DescendantTrivia()
-                    .Any(t => t.IsKind(SyntaxKind.SingleLineCommentTrivia) && 
-                              t.ToString().Contains("#nullable enable"));
+                //bool hasNullableEnabled = ns
+                //    .DescendantTrivia()
+                //    .Any(t => t.IsKind(SyntaxKind.SingleLineCommentTrivia) && 
+                //              t.ToString().Contains("#nullable enable"));
                 if (_rewriter.Visit(ns) is not { } templates)
                     continue;
-                foreach (var t in templates)
-                    if (t is not null)
-                    {
-                        var src = ns
-                            .WithMembers(new(t))
-                            .NormalizeWhitespace()
-                            .ToString();
+                foreach (var template in templates)
+                {
+                    if (template is null)
+                        continue;
+                    var src = ns
+                        .WithMembers(new(template))
+                        .NormalizeWhitespace()
+                        .ToString();
 
-                        var id = t.Identifier + ".g.cs";
-                        context.AddSource(id, src);
-                    }
+                    var id = template.Identifier + ".g.cs";
+                    context.AddSource(id, src);
+                }
             }
         }
     }
