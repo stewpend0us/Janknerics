@@ -20,7 +20,7 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax?>>
     private static readonly DiagnosticDescriptor RuleDuplicateKey = new DiagnosticDescriptor("JANK0003",$"Duplicate {nameof(JanknericAttribute)}",$"First argument of {nameof(JanknericAttribute)} must be unique on a given type","JanknericAttribute", DiagnosticSeverity.Error, true);
     private static readonly DiagnosticDescriptor RuleTwoArguments = new DiagnosticDescriptor("JANK0004",$"{nameof(JanknericAttribute)} with more than two arguments",$"{nameof(JanknericAttribute)} can have at most two arguments","JanknericAttribute", DiagnosticSeverity.Error, true);
         
-    public static Action<Diagnostic>? ReportDiagnostic { get; set; }
+    public Action<Diagnostic>? ReportDiagnostic { get; set; }
 
     /// <summary>
     /// compare TypeSyntax using their string representation
@@ -55,44 +55,50 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax?>>
     /// visit any TypeDeclarationSyntax we encounter
     /// if it contains any Jankneric attributes then split it into the corresponding number of output types
     /// </summary>
-    /// <param name="node"></param>
+    /// <param name="template"></param>
     /// <returns></returns>
-    private IEnumerable<TypeDeclarationSyntax> VisitTypeDeclaration(TypeDeclarationSyntax templateType)
+    private IEnumerable<TypeDeclarationSyntax> VisitTypeDeclaration(TypeDeclarationSyntax template)
     {
-        List<(TypeSyntax, TypeSyntax?)> constructors = [];
+        Dictionary<TypeSyntax, GeneratedClassSpec> spec = new (TypeSyntaxComparer);
+        
         // remove Jankneric attributes from the TypeDeclaration
-        templateType = ExtractJank(templateType, ref constructors);
+        template = ExtractJank(template, out var constructorData);
+        foreach (var (target, arg) in constructorData)
+        {
+            if (!spec.ContainsKey(target))
+                spec.Add(target, new());
+            Debug.Assert(spec[target].Constructor is null, "constructor is not null");
+            spec[target].Constructor = arg;
+        }
         
         // remove Jankneric attributes from each MemberDeclaration
-        List<(TypeSyntax, TypeSyntax?)> members = [];
-        SyntaxList<MemberDeclarationSyntax> cleanMembers = [];
-        foreach (var member in templateType.Members)
-            cleanMembers.Add(ExtractJank(member, ref members));
-        templateType = templateType.WithMembers(cleanMembers);
-        // the template is now jank free
-        // and we've collected all the data from the attributes in 'constructors' and 'members'
-        
-        // fill the dictionary (just groups things by generated type for convenience)
-        Dictionary<TypeSyntax, GeneratedClassSpec> spec = new (TypeSyntaxComparer);
-        foreach (var (target, arg) in constructors)
-            if (arg is not null)
-                spec[target].Constructor.Add(arg);
-        foreach (var (target, arg) in members)
-            spec[target].Member.Add(arg);
+        foreach (var member in template.Members)
+        {
+            var cleanMember = ExtractJank(member, out var memberData);
+            foreach (var (target, args) in memberData)
+            {
+                if (!spec.ContainsKey(target))
+                    spec.Add(target, new GeneratedClassSpec());
+                spec[target].Members.Add(new ()
+                {
+                    template = cleanMember,
+                    newType = args
+                });
+            }
+        }
 
+        template = template.WithMembers(SyntaxFactory.List(spec.Values.SelectMany(s => s.Members.Select(m => m.template))));
+        
         // finally loop through the dictionary and actually create the output
         foreach (var kv in spec)
-        {
-            var targetType = kv.Key;
-            var info = kv.Value;
-            yield return Rewrite(templateType, targetType, info);
-        }
+            yield return Rewrite(template, kv.Key, kv.Value);
     }
 
-    private T ExtractJank<T>(T template, ref List<(TypeSyntax, TypeSyntax?)> targetAndArgs) where T : MemberDeclarationSyntax
+    private T ExtractJank<T>(T template, out List<(TypeSyntax, TypeSyntax?)> targetAndArgs) where T : MemberDeclarationSyntax
     {
-        SyntaxList<AttributeListSyntax> keptAttributes = [];
-        SyntaxList<AttributeListSyntax> jankAttributes = [];
+        targetAndArgs = [];
+        List<AttributeListSyntax> keptAttributes = [];
+        List<AttributeListSyntax> jankAttributes = [];
         foreach (var attributeList in template.AttributeLists)
         {
             ExtractJank(attributeList, out var clean, out var dirty);
@@ -112,7 +118,7 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax?>>
                 arg = ((TypeOfExpressionSyntax)jank.ArgumentList!.Arguments[1].Expression).Type;
             targetAndArgs.Add((target, arg));
         }
-        return (T)template.WithAttributeLists(keptAttributes);
+        return (T)template.WithAttributeLists(SyntaxFactory.List(keptAttributes));
     }
 
     /// <summary>
@@ -124,11 +130,11 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax?>>
     /// <returns></returns>
     private void ExtractJank(AttributeListSyntax source, out AttributeListSyntax clean, out AttributeListSyntax dirty)
     {
-        var cleanList = SyntaxFactory.SeparatedList<AttributeSyntax>();
-        var dirtyList = SyntaxFactory.SeparatedList<AttributeSyntax>();
+        List<AttributeSyntax> cleanList = [];
+        List<AttributeSyntax> dirtyList = [];
         foreach (var attr in source.Attributes)
         {
-            if (attr.ToString().Equals("Jankneric"))
+            if (attr.Name.ToString().Equals("Jankneric"))
             {
                 if (VerifyJank(attr))
                     dirtyList.Add(attr);
@@ -136,8 +142,8 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax?>>
             else
                 cleanList.Add(attr);
         }
-        clean = SyntaxFactory.AttributeList(cleanList);
-        dirty = SyntaxFactory.AttributeList(dirtyList);
+        clean = SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(cleanList));
+        dirty = SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(dirtyList));
     }
 
     private bool VerifyJank(AttributeSyntax jank)
@@ -165,69 +171,42 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax?>>
         return true;
     }
     
-    private TypeDeclarationSyntax Rewrite(TypeDeclarationSyntax templateType, TypeSyntax targetType, GeneratedClassSpec info)
+    private TypeDeclarationSyntax Rewrite(TypeDeclarationSyntax template, TypeSyntax targetType, GeneratedClassSpec targetInfo)
     {
-        Debug.Assert(templateType.Members.Count == info.Member.Count);
-        // TODO fill this out
-        throw new NotImplementedException();
-    }
-
-    private MemberDeclarationSyntax Rewrite(MemberDeclarationSyntax node, SyntaxList<TypeSyntax> destinationType)
-    {
-        if (destinationType.Count == 0)
-            return node; // 'passthrough' case
-        if (destinationType.Count != 1)
+        List<MemberDeclarationSyntax> members = [];
+        foreach (var item in targetInfo.Members)
         {
-            ReportDiagnostic?.Invoke(Diagnostic.Create(RuleTwoArguments, Location.None));
-            return node;
+            
+            switch (item.template)
+            {
+                case FieldDeclarationSyntax field:
+                    members.Add(item.newType is null
+                        ? field
+                        : field.WithDeclaration(field.Declaration.WithType(item.newType)));
+                    break;
+                case PropertyDeclarationSyntax property:
+                    members.Add(item.newType is null
+                        ? property
+                        : property.WithType(item.newType));
+                    break;
+            }
         }
-        var type = destinationType[0];
-        if (!type.IsKind(SyntaxKind.PredefinedType))
-        {
-            // TODO do need to do something smarter with reference types?
-            // the attributes on the expected class have a nullable but the generated type doesn't for the CustomTypeTestClasses
-        }
-        return node switch
-        {
-            FieldDeclarationSyntax field => field.WithDeclaration(field.Declaration.WithType(type)),
-            PropertyDeclarationSyntax property => property.WithType(type),
-            _ => node
-        };
-    }
-    
-    /// <summary>
-    /// iterate through and re-write or remove each member of the Type
-    /// </summary>
-    /// <param name="node"></param>
-    /// <param name="destinationType"></param>
-    /// <param name="args"></param>
-    /// <returns></returns>
-    private TypeDeclarationSyntax Rewrite(TypeDeclarationSyntax node, KeyValuePair<TypeSyntax, GeneratedClassSpec> entry)
-    {
-        foreach (var member in node.Members)
-        {
-            var newMember = ExtractTypeJank(member, out var janknericAttributes);
-            if (!janknericAttributes.TryGetValue(destinationType, out var attributes))
-                continue;
-            newMembers = newMembers.Add(Rewrite(newMember, attributes));
-        }
-
         List<SyntaxToken> modifiersToAdd = [];
         AddIfAbsent(SyntaxKind.PublicKeyword);
         AddIfAbsent(SyntaxKind.PartialKeyword);
         
-        return node
-            .WithMembers(newMembers)
-            .WithIdentifier(SyntaxFactory.Identifier(destinationType.ToString()))
-            .AddModifiers(modifiersToAdd.ToArray());
-
+        return template
+            .WithIdentifier(SyntaxFactory.Identifier(targetType.ToString()))
+            .WithModifiers(SyntaxFactory.TokenList(modifiersToAdd.ToArray()))
+            .WithMembers(SyntaxFactory.List(members));
+        
         void AddIfAbsent(SyntaxKind kind)
         {
-            if (!node.Modifiers.Any(m => m.IsKind(kind)))
+            if (!template.Modifiers.Any(m => m.IsKind(kind)))
                 modifiersToAdd.Add(SyntaxFactory.Token(kind));
         }
     }
-
+    
     public override IEnumerable<TypeDeclarationSyntax?>? VisitClassDeclaration(ClassDeclarationSyntax node) =>
         VisitTypeDeclaration(node);   
 

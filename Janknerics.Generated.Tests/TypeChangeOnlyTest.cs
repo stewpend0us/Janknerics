@@ -16,7 +16,7 @@ public class TypeChangeOnlyTest
     [DataRow(typeof(CustomTypeExpected), typeof(CustomTypeGenerated))]
     [DataRow(typeof(MultiTemplateExpected1), typeof(MultiTemplateGenerated1))]
     [DataRow(typeof(MultiTemplateExpected2), typeof(MultiTemplateGenerated2))]
-    //[DataRow(typeof(MissingClassAttributeExpected), typeof(MissingClassAttributeGenerated))]
+    [DataRow(typeof(MissingClassAttributeExpected), typeof(MissingClassAttributeGenerated))]
     public void Test(Type expected, Type generated)
     {
         // check for typos

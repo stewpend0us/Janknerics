@@ -3,10 +3,22 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Janknerics;
 
+/// <summary>
+/// 
+/// </summary>
+public class GeneratedClassMember
+{
+    public MemberDeclarationSyntax template;
+    public TypeSyntax? newType;
+}
+
+/// <summary>
+/// everything we need to generate a single output class
+/// </summary>
 public class GeneratedClassSpec
 {
-    public List<TypeSyntax> Constructor = [];
-    public List<TypeSyntax?> Member = [];
+    public TypeSyntax? Constructor;
+    public List<GeneratedClassMember> Members = [];
 }
 
 
@@ -14,19 +26,18 @@ public class GeneratedClassSpec
  * INPUT
  * x
  * a
- * a
  * b
  * Class
  *   a
  *   b
- *   Prop1
+ *   P1
  *   b
  *   d
- *   Prop2
+ *   P2
  *
  * OUTPUT
- * x (ctor),       ()
- * a (ctor, ctor), (P1)
- * b (ctor),       (P1, P2)
- * d (),           (P2)
+ * x (ctor), ()
+ * a (ctor), (P1)
+ * b (ctor), (P1, P2)
+ * d (),     (P2)
  */
