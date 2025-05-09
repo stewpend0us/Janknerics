@@ -57,7 +57,7 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax?>>
     /// </summary>
     /// <param name="node"></param>
     /// <returns></returns>
-    private IEnumerable<TypeDeclarationSyntax?> VisitTypeDeclaration(TypeDeclarationSyntax templateType)
+    private IEnumerable<TypeDeclarationSyntax> VisitTypeDeclaration(TypeDeclarationSyntax templateType)
     {
         List<(TypeSyntax, TypeSyntax?)> constructors = [];
         // remove Jankneric attributes from the TypeDeclaration
@@ -68,28 +68,28 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax?>>
         SyntaxList<MemberDeclarationSyntax> cleanMembers = [];
         foreach (var member in templateType.Members)
             cleanMembers.Add(ExtractJank(member, ref members));
-        
-        // the template is now jank free
         templateType = templateType.WithMembers(cleanMembers);
+        // the template is now jank free
+        // and we've collected all the data from the attributes in 'constructors' and 'members'
         
-        // fill the dictionary (just groups things by key for convenience)
-        Dictionary<TypeSyntax, GeneratedClassSpec> spec = [];
+        // fill the dictionary (just groups things by generated type for convenience)
+        Dictionary<TypeSyntax, GeneratedClassSpec> spec = new (TypeSyntaxComparer);
         foreach (var (target, arg) in constructors)
             if (arg is not null)
                 spec[target].Constructor.Add(arg);
         foreach (var (target, arg) in members)
             spec[target].Member.Add(arg);
 
+        // finally loop through the dictionary and actually create the output
         foreach (var kv in spec)
         {
             var targetType = kv.Key;
             var info = kv.Value;
-            Debug.Assert(info.Member.Count == templateType.Members.Count);
             yield return Rewrite(templateType, targetType, info);
         }
     }
 
-    private T ExtractJank<T>(T template, ref List<(TypeSyntax, TypeSyntax?)> spec) where T : MemberDeclarationSyntax
+    private T ExtractJank<T>(T template, ref List<(TypeSyntax, TypeSyntax?)> targetAndArgs) where T : MemberDeclarationSyntax
     {
         SyntaxList<AttributeListSyntax> keptAttributes = [];
         SyntaxList<AttributeListSyntax> jankAttributes = [];
@@ -110,7 +110,7 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax?>>
             TypeSyntax? arg = null;
             if (jank.ArgumentList!.Arguments.Count == 2)
                 arg = ((TypeOfExpressionSyntax)jank.ArgumentList!.Arguments[1].Expression).Type;
-            spec.Add((target, arg));
+            targetAndArgs.Add((target, arg));
         }
         return (T)template.WithAttributeLists(keptAttributes);
     }
@@ -165,16 +165,12 @@ public class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax?>>
         return true;
     }
     
-    private TypeSyntax? CheckArgument(AttributeArgumentSyntax argument)
+    private TypeDeclarationSyntax Rewrite(TypeDeclarationSyntax templateType, TypeSyntax targetType, GeneratedClassSpec info)
     {
-        if (argument.Expression is TypeOfExpressionSyntax typeOfExpression)
-            return typeOfExpression.Type;
-        ReportDiagnostic?.Invoke(Diagnostic.Create(RuleNotAType, Location.None));
-        return null;
+        Debug.Assert(templateType.Members.Count == info.Member.Count);
+        // TODO fill this out
+        throw new NotImplementedException();
     }
-
-    private SyntaxList<TypeSyntax> CheckArguments(SeparatedSyntaxList<AttributeArgumentSyntax> arguments) =>
-        new (arguments.Select(CheckArgument).OfType<TypeSyntax>());
 
     private MemberDeclarationSyntax Rewrite(MemberDeclarationSyntax node, SyntaxList<TypeSyntax> destinationType)
     {
