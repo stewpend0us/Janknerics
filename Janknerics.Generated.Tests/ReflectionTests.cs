@@ -55,16 +55,14 @@ public class TypeChangeOnlyTest
                 {
                     var g = (MethodBase)gps[i];
                     if (e is MethodInfo em && g is MethodInfo gm)
-                        if (em.ReturnType != expected && gm.ReturnType != generated)
-                            Assert.AreEqual(em.ReturnType, gm.ReturnType);
+                        Assert.AreEqual(em.ReturnType == expected ? generated : em.ReturnType, gm.ReturnType);
                     var ep = e.GetParameters();
                     var gp = g.GetParameters();
                     Assert.AreEqual(ep.Length, gp.Length);
                     for (var j = 0; j < ep.Length; j++)
                     {
                         Assert.AreEqual(ep[j].Name, gp[j].Name);
-                        if (ep[j].ParameterType != expected && gp[j].ParameterType != generated)
-                            Assert.AreEqual(ep[j].ParameterType, gp[j].ParameterType);
+                        Assert.AreEqual(ep[j].ParameterType == expected ? generated : ep[j].ParameterType, gp[j].ParameterType);
                         Assert.AreEqual(ep[j].Attributes, gp[j].Attributes);
                     }
                     break;
