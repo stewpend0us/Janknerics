@@ -3,17 +3,15 @@ namespace Janknerics.Test.Classes;
 public partial class MultiTemplateGenerated1;
 public partial class MultiTemplateGenerated2;
 
-[Jankneric(typeof(MultiTemplateGenerated1))]
 public class MultiTemplateTemplate1
 {
-    [Jankneric(typeof(MultiTemplateGenerated1), typeof(double))]
+    [Jankneric(typeof(MultiTemplateGenerated1), ReplacementType = typeof(double))]
     public float F = 0;
 };
 
-[Jankneric(typeof(MultiTemplateGenerated2))]
 public class MultiTemplateTemplate2
 {
-    [Jankneric(typeof(MultiTemplateGenerated2), typeof(long))]
+    [Jankneric(typeof(MultiTemplateGenerated2),ReplacementType = typeof(long))]
     public int F = 0;
 };
 
@@ -26,4 +24,3 @@ public class MultiTemplateExpected2
 {
     public long F = 0;
 };
-

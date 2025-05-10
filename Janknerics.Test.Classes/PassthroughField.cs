@@ -2,7 +2,6 @@
 
 public partial class PassthroughGenerated;
 
-[Jankneric(typeof(PassthroughGenerated))]
 public class PassthroughTemplate
 {
     [Jankneric(typeof(PassthroughGenerated))]

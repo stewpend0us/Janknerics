@@ -1,20 +1,20 @@
-namespace Janknerics
+using System.Diagnostics.CodeAnalysis;
+
+namespace Janknerics;
+
+[ExcludeFromCodeCoverage]
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = true)]
+public sealed class JanknericAttribute(Type targetType) : Attribute
 {
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = true)]
-    public sealed class JanknericAttribute : Attribute
-    {
-        public Type TargetType { get; }
-        public Type? ReplacementType { get; }
+    internal const string Name = "Jankneric";
+    public Type TargetType => targetType;
+    public Type? ReplacementType { get; set; }
+}
 
-        public JanknericAttribute(Type targetType)
-        {
-            TargetType = targetType;
-        }
-
-        public JanknericAttribute(Type targetType, Type replacementType)
-        {
-            TargetType = targetType;
-            ReplacementType = replacementType;
-        }
-    }
+[ExcludeFromCodeCoverage]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = true)]
+public sealed class JanknericConstructorAttribute(Type targetType) : Attribute
+{
+    internal const string Name = "JanknericConstructor";
+    public Type TargetType => targetType;
 }

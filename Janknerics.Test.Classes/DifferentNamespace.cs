@@ -1,4 +1,4 @@
-﻿namespace Janknerics.Test.Classes;
+﻿namespace Janknerics.Test.DifferentClasses;
 public partial class FieldGenerated;
 
 public class FieldTemplate
@@ -11,3 +11,4 @@ class FieldExpected
 {
     public double F = 0;
 };
+

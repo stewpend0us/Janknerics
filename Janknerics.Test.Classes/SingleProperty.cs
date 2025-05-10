@@ -2,11 +2,9 @@
 
 public partial class PropertyGenerated;
 
-
-[Jankneric(typeof(PropertyGenerated))]
 public class PropertyTemplate
 {
-    [Jankneric(typeof(PropertyGenerated), typeof(int))]
+    [Jankneric(typeof(PropertyGenerated),ReplacementType = typeof(int))]
     public float P { get; set; }  = 0;
 }
 

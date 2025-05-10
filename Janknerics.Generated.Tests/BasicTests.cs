@@ -56,6 +56,19 @@ public class BasicTests
     }
 
     [TestMethod]
+    public void TestMultipleDifferent()
+    {
+        MultipleDifferentTemplate t = new ();
+        RunTest(()=>t.F, 0.0f);
+        RunTest(()=>t.P, 0L);
+        
+        MultipleDifferentGenerated1 g1 = new ();
+        MultipleDifferentGenerated2 g2 = new ();
+        RunTest(()=>g1.F, 0.0);
+        RunTest(()=>g2.P, 0);
+    }
+    
+    [TestMethod]
     public void TestCustomType()
     {
         CustomTypeTemplate t = new ();
@@ -77,5 +90,45 @@ public class BasicTests
         MultiTemplateGenerated2 g2 = new ();
         RunTest(()=>g1.F, 0.0);
         RunTest(()=>g2.F, 0L);
+    }
+    
+    [TestMethod]
+    public void TestDifferentNamespace()
+    {
+        Janknerics.Test.DifferentClasses.FieldTemplate t = new();
+        RunTest(()=>t.F, 0.0f);
+        
+        Janknerics.Test.DifferentClasses.FieldGenerated g = new ();
+        RunTest(()=>g.F, 0.0);
+    }
+    
+    [TestMethod]
+    public void AttributePassthrough()
+    {
+        AttributeTemplate t = new();
+        RunTest(()=>t.F, 0.0f);
+        
+        AttributeGenerated g = new ();
+        RunTest(()=>g.F, 0.0);
+    }
+    
+    [TestMethod]
+    public void Struct()
+    {
+        StructTemplate t = new();
+        RunTest(()=>t.F, 0.0f);
+        
+        StructGenerated g = new ();
+        RunTest(()=>g.F, 0.0);
+    }
+    
+    [TestMethod]
+    public void Record()
+    {
+        RecordTemplate t = new();
+        RunTest(()=>t.F, 0.0f);
+        
+        RecordGenerated g = new ();
+        RunTest(()=>g.F, 0.0);
     }
 }

@@ -4,12 +4,10 @@ public partial class MultipleGenerated1;
 public partial class MultipleGenerated2;
 
 // the class to be used as a template by Janknerics
-[Jankneric(typeof(MultipleGenerated1))]
-[Jankneric(typeof(MultipleGenerated2))]
 public class MultipleTemplate
 {
-    [Jankneric(typeof(MultipleGenerated1), typeof(double))]
-    [Jankneric(typeof(MultipleGenerated2), typeof(int))]
+    [Jankneric(typeof(MultipleGenerated1), ReplacementType = typeof(double))]
+    [Jankneric(typeof(MultipleGenerated2), ReplacementType = typeof(int))]
     public float F = 0;
 };
 

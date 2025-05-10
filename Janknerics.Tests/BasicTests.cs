@@ -6,14 +6,18 @@ namespace Janknerics.Tests;
 public class BasicTests
 {
     [DataTestMethod]
-    [DataRow(null, 0, 0)]
+    [DataRow("AttributePassthrough.cs", 1, 0)]
     [DataRow("CustomType.cs", 1, 0)]
+    [DataRow("DifferentNamespace.cs", 1, 0)]
     [DataRow("GenerateMultiple.cs", 2, 0)]
-    [DataRow("MissingClassAttribute.cs", 1, 0)]
+    [DataRow("GenerateMultipleDifferent.cs", 2, 0)]
     [DataRow("MultipleTemplates.cs", 2, 0)]
     [DataRow("PassthroughField.cs", 1, 0)]
+    [DataRow("Record.cs", 1, 0)]
     [DataRow("SingleField.cs", 1, 0)]
     [DataRow("SingleProperty.cs", 1, 0)]
+    [DataRow("Struct.cs", 1, 0)]
+    [DataRow(null, 0, 0)]
     public void Test(string? filename, int expectedTrees, int expectedDiagnostics)
     {
         // Create the 'input' compilation that the generator will act on

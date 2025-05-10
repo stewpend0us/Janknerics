@@ -6,19 +6,19 @@ namespace Janknerics;
 /// <summary>
 /// 
 /// </summary>
-public class GeneratedClassMember
+internal class GeneratorMember(MemberDeclarationSyntax template, TypeSyntax? newType)
 {
-    public MemberDeclarationSyntax template;
-    public TypeSyntax? newType;
+    public MemberDeclarationSyntax Template = template;
+    public TypeSyntax? NewType = newType;
 }
 
 /// <summary>
 /// everything we need to generate a single output class
 /// </summary>
-public class GeneratedClassSpec
+internal class GeneratorSpec
 {
     public TypeSyntax? Constructor;
-    public List<GeneratedClassMember> Members = [];
+    public readonly List<GeneratorMember> Members = [];
 }
 
 

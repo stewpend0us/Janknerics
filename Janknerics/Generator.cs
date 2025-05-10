@@ -1,5 +1,4 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Janknerics
@@ -25,26 +24,28 @@ namespace Janknerics
         
         private void Execute(IReadOnlyList<BaseNamespaceDeclarationSyntax> namespaces, SourceProductionContext context)
         {
-            _rewriter.ReportDiagnostic = context.ReportDiagnostic;
+            //_rewriter.ReportDiagnostic = context.ReportDiagnostic;
             foreach (var ns in namespaces)
             {
                 //bool hasNullableEnabled = ns
                 //    .DescendantTrivia()
                 //    .Any(t => t.IsKind(SyntaxKind.SingleLineCommentTrivia) && 
                 //              t.ToString().Contains("#nullable enable"));
-                if (_rewriter.Visit(ns) is not { } templates)
-                    continue;
-                foreach (var template in templates)
+                if (_rewriter.Visit(ns) is { } templates)
                 {
-                    if (template is null)
-                        continue;
-                    var src = ns
-                        .WithMembers(new(template))
-                        .NormalizeWhitespace()
-                        .ToString();
+                    foreach (var template in templates)
+                    {
+                        if (template is not null)
+                        {
+                            var src = ns
+                                .WithMembers(new(template))
+                                .NormalizeWhitespace()
+                                .ToString();
 
-                    var id = template.Identifier + ".g.cs";
-                    context.AddSource(id, src);
+                            var id = Path.Combine(ns.Name.ToString(), template.Identifier + ".g.cs");
+                            context.AddSource(id, src);
+                        }
+                    }
                 }
             }
         }

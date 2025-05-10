@@ -26,24 +26,22 @@ With Janknerics we can write:
 partial class MyClassDoubles;
 partial class MyClassAllInts;
 
-[Jankneric(typeof(MyClassDoubles))]
-[Jankneric(typeof(MyClassAllInts))]
 class MyModelClass
 {
-    [Jankneric(typeof(MyClassDoubles), typeof(double))]
-    [Jankneric(typeof(MyClassAllInts), typeof(int))]
+    [Jankneric(typeof(MyClassDoubles), ReplacementType = typeof(double))]
+    [Jankneric(typeof(MyClassAllInts), ReplacementType = typeof(int))]
     public float P1;
     
-    [Jankneric(typeof(MyClassDoubles), typeof(double))]
-    [Jankneric(typeof(MyClassAllInts), typeof(int))]
+    [Jankneric(typeof(MyClassDoubles), ReplacementType = typeof(double))]
+    [Jankneric(typeof(MyClassAllInts), ReplacementType = typeof(int))]
     public float P2 { get; }
     
-    [Jankneric(typeof(MyClassDoubles), typeof(long))]
-    [Jankneric(typeof(MyClassAllInts), typeof(int))]
+    [Jankneric(typeof(MyClassDoubles), ReplacementType = typeof(long))]
+    [Jankneric(typeof(MyClassAllInts), ReplacementType = typeof(int))]
     public int P3;
     
-    [Jankneric(typeof(MyClassDoubles), typeof(string))]
-    [Jankneric(typeof(MyClassAllInts), typeof(int))]
+    [Jankneric(typeof(MyClassDoubles), ReplacementType = typeof(string))]
+    [Jankneric(typeof(MyClassAllInts), ReplacementType = typeof(int))]
     public string P4;
 }
 ```
@@ -53,7 +51,7 @@ This takes more lines of code BUT it's much easier to follow when the number of 
 ## Bonus Features
 Since Janknerics is a Source Generator we can make it a little more useful than plain Generics too.
 
-### Properties can be omitted entirely or "inherited" exactly.
+### Properties can be omitted entirely or "passed through" exactly.
 
 In the example above for the ```P4``` field we could have written:
 
@@ -73,8 +71,8 @@ In this case:
 In the example above the attributes on ```MyModelClass``` could have been specified this way:
 
 ```c#
-[Jankneric(typeof(MyClassDoubles), typeof(MyModelClass))]
-[Jankneric(typeof(MyClassAllInts), typeof(MyClassDoubles))]
+[JanknericConstructor(typeof(MyClassDoubles))]
+[JanknericConstructor(typeof(MyClassAllInts))]
 class MyModelClass
 ```
 

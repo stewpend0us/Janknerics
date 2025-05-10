@@ -9,14 +9,19 @@ public class TypeChangeOnlyTest
 {
     [DataTestMethod]
     [DataRow(typeof(FieldExpected), typeof(FieldGenerated))]
+    [DataRow(typeof(Janknerics.Test.DifferentClasses.FieldExpected), typeof(Janknerics.Test.DifferentClasses.FieldGenerated))]
     [DataRow(typeof(PropertyExpected), typeof(PropertyGenerated))]
     [DataRow(typeof(PassthroughExpected), typeof(PassthroughGenerated))]
     [DataRow(typeof(MultipleExpected1), typeof(MultipleGenerated1))]
     [DataRow(typeof(MultipleExpected2), typeof(MultipleGenerated2))]
+    [DataRow(typeof(MultipleDifferentExpected1), typeof(MultipleDifferentGenerated1))]
+    [DataRow(typeof(MultipleDifferentExpected2), typeof(MultipleDifferentGenerated2))]
     [DataRow(typeof(CustomTypeExpected), typeof(CustomTypeGenerated))]
     [DataRow(typeof(MultiTemplateExpected1), typeof(MultiTemplateGenerated1))]
     [DataRow(typeof(MultiTemplateExpected2), typeof(MultiTemplateGenerated2))]
-    [DataRow(typeof(MissingClassAttributeExpected), typeof(MissingClassAttributeGenerated))]
+    [DataRow(typeof(AttributeExpected), typeof(AttributeGenerated))]
+    [DataRow(typeof(StructExpected), typeof(StructGenerated))]
+    [DataRow(typeof(RecordExpected), typeof(RecordGenerated))]
     public void Test(Type expected, Type generated)
     {
         // check for typos
@@ -50,14 +55,16 @@ public class TypeChangeOnlyTest
                 {
                     var g = (MethodBase)gps[i];
                     if (e is MethodInfo em && g is MethodInfo gm)
-                        Assert.AreEqual(em.ReturnType, gm.ReturnType);
+                        if (em.ReturnType != expected && gm.ReturnType != generated)
+                            Assert.AreEqual(em.ReturnType, gm.ReturnType);
                     var ep = e.GetParameters();
                     var gp = g.GetParameters();
                     Assert.AreEqual(ep.Length, gp.Length);
                     for (var j = 0; j < ep.Length; j++)
                     {
                         Assert.AreEqual(ep[j].Name, gp[j].Name);
-                        Assert.AreEqual(ep[j].ParameterType, gp[j].ParameterType);
+                        if (ep[j].ParameterType != expected && gp[j].ParameterType != generated)
+                            Assert.AreEqual(ep[j].ParameterType, gp[j].ParameterType);
                         Assert.AreEqual(ep[j].Attributes, gp[j].Attributes);
                     }
                     break;
