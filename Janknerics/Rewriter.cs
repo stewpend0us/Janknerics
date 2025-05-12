@@ -132,18 +132,6 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
     private TypeDeclarationSyntax Rewrite(TypeDeclarationSyntax template, TypeSyntax targetType, GeneratorSpec targetInfo)
     {
         List<MemberDeclarationSyntax> members = [];
-        if (targetInfo.Constructor is not null)
-        {
-            const string argName = "source";
-            var modifiers = SyntaxFactory.TokenList([SyntaxFactory.Token(SyntaxKind.PublicKeyword)]);
-            var arg = SyntaxFactory.Parameter(SyntaxFactory.Identifier(argName))
-                .WithType(SyntaxFactory.ParseTypeName(template.Identifier.ToString()));
-            var args = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList([arg]));
-            var constructedType = SyntaxFactory.Identifier(targetType.ToString());
-            var body = SyntaxFactory.Block(ConstructorBody());
-            var constructor = SyntaxFactory.ConstructorDeclaration([], modifiers, constructedType, args, null, body);
-            members.Add(constructor);
-        }
         foreach (var item in targetInfo.Members)
         {
             
@@ -161,6 +149,20 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
                     break;
             }
         }
+        
+        if (targetInfo.Constructor is not null)
+        {
+            const string argName = "source";
+            var modifiers = SyntaxFactory.TokenList([SyntaxFactory.Token(SyntaxKind.PublicKeyword)]);
+            var arg = SyntaxFactory.Parameter(SyntaxFactory.Identifier(argName))
+                .WithType(SyntaxFactory.ParseTypeName(template.Identifier.ToString()));
+            var args = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList([arg]));
+            var constructedType = SyntaxFactory.Identifier(targetType.ToString());
+            var body = SyntaxFactory.Block(ConstructorStatements(members));
+            var constructor = SyntaxFactory.ConstructorDeclaration([], modifiers, constructedType, args, null, body);
+            members.Add(constructor);
+        }
+        
         List<SyntaxToken> modifiersToAdd = [];
         AddIfAbsent(SyntaxKind.PublicKeyword);
         AddIfAbsent(SyntaxKind.PartialKeyword);
@@ -177,9 +179,31 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
         }
     }
 
-    private SyntaxList<StatementSyntax> ConstructorBody()
+    private static SyntaxList<StatementSyntax> ConstructorStatements(List<MemberDeclarationSyntax> members)
     {
-        return SyntaxFactory.List<StatementSyntax>([]);
+        List<StatementSyntax> statements = [];
+
+        foreach (var member in members)
+        {
+            TypeSyntax type;
+            SyntaxToken name;
+            switch (member)
+            {
+                case PropertyDeclarationSyntax property:
+                    name = property.Identifier;
+                    type = property.Type;
+                    break;
+                case FieldDeclarationSyntax field:
+                    name = field.Declaration.Variables.First().Identifier;
+                    type = field.Declaration.Type;
+                    break;
+                default:
+                    continue;
+            }
+            statements.Add(SyntaxFactory.ParseStatement($"{name} = ({type})source.{name};"));
+        }
+        
+        return SyntaxFactory.List<StatementSyntax>(statements);
     }
     
     public override IEnumerable<TypeDeclarationSyntax>? VisitClassDeclaration(ClassDeclarationSyntax node) =>
