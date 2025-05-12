@@ -54,7 +54,8 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
             if (!spec.ContainsKey(target))
                 spec.Add(target, new());
             Debug.Assert(spec[target].Constructor is null, "constructor is not null");
-            spec[target].Constructor = arg;
+            Debug.Assert(arg is null, "arg is null");
+            spec[target].Constructor = SyntaxFactory.ParseTypeName(target.ToString());
         }
         
         // remove Jankneric attributes from each MemberDeclaration
@@ -76,7 +77,6 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
             yield return Rewrite(template, kv.Key, kv.Value);
     }
 
-    // TODO targetAndArgs here doesn't distinquish between attributes...but it needs to.
     private T ExtractJank<T>(T template, out List<(TypeSyntax, TypeSyntax?)> targetAndArgs) where T : MemberDeclarationSyntax
     {
         targetAndArgs = [];
@@ -134,9 +134,14 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
         List<MemberDeclarationSyntax> members = [];
         if (targetInfo.Constructor is not null)
         {
-            var arg = SyntaxFactory.Parameter(SyntaxFactory.Identifier(targetInfo.Constructor.ToString()));
+            const string argName = "source";
+            var modifiers = SyntaxFactory.TokenList([SyntaxFactory.Token(SyntaxKind.PublicKeyword)]);
+            var arg = SyntaxFactory.Parameter(SyntaxFactory.Identifier(argName))
+                .WithType(SyntaxFactory.ParseTypeName(template.Identifier.ToString()));
             var args = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList([arg]));
-            var constructor = SyntaxFactory.ConstructorDeclaration(targetType.ToString()).WithParameterList(args);
+            var constructedType = SyntaxFactory.Identifier(targetType.ToString());
+            var body = SyntaxFactory.Block(ConstructorBody());
+            var constructor = SyntaxFactory.ConstructorDeclaration([], modifiers, constructedType, args, null, body);
             members.Add(constructor);
         }
         foreach (var item in targetInfo.Members)
@@ -170,6 +175,11 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
             if (!template.Modifiers.Any(m => m.IsKind(kind)))
                 modifiersToAdd.Add(SyntaxFactory.Token(kind));
         }
+    }
+
+    private SyntaxList<StatementSyntax> ConstructorBody()
+    {
+        return SyntaxFactory.List<StatementSyntax>([]);
     }
     
     public override IEnumerable<TypeDeclarationSyntax>? VisitClassDeclaration(ClassDeclarationSyntax node) =>
