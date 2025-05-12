@@ -136,10 +136,10 @@ public class BasicTests
     public void Constructor()
     {
         ConstructorTemplate t = new();
-        t.F = 1;
         RunTest(()=>t.P, 0.0f);
-        RunTest(()=>t.F, 1.0f);
+        RunTest(()=>t.F, 0.0f);
         
+        t.F = 1; // change before passing to make sure the value flows through
         ConstructorGenerated g = new (t);
         RunTest(()=>g.P, 0);
         RunTest(()=>g.F, 1);
