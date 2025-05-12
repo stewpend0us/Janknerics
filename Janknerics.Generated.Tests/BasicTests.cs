@@ -38,9 +38,11 @@ public class BasicTests
     {
         PassthroughTemplate t = new ();
         RunTest(()=>t.P, "");
+        RunTest(()=>t.F, 0);
         
         PassthroughGenerated g = new ();
         RunTest(()=>g.P, "");
+        RunTest(()=>g.F, 0);
     }
     
     [TestMethod]

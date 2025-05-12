@@ -164,7 +164,7 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
         }
         
         List<SyntaxToken> modifiersToAdd = [];
-        AddIfAbsent(SyntaxKind.PublicKeyword);
+        //AddIfAbsent(SyntaxKind.PublicKeyword);
         AddIfAbsent(SyntaxKind.PartialKeyword);
         
         return template
