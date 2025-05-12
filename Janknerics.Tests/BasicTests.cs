@@ -22,9 +22,8 @@ public class BasicTests
     public void Test(string? filename, int expectedTrees, int expectedDiagnostics)
     {
         // Create the 'input' compilation that the generator will act on
-        var inputCompilation = Utils.CreateCompilation(filename);
-
-        var runResult = Utils.Compile(inputCompilation, out var outputCompilation, out var diagnostics);
+        var runResult = Utils.CreateCompilation(filename)
+            .Compile(out var outputCompilation, out var diagnostics);
 
         Assert.AreEqual(expectedTrees, runResult.GeneratedTrees.Length);
         Assert.AreEqual(expectedDiagnostics, runResult.Diagnostics.Length);

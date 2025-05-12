@@ -5,9 +5,9 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace Janknerics.Tests;
 
-public class Utils
+public static class Utils
 {
-    public static GeneratorDriverRunResult Compile(Compilation inputCompilation, out Compilation outputCompilation, out ImmutableArray<Diagnostic> diagnostics)
+    public static GeneratorDriverRunResult Compile(this Compilation inputCompilation, out Compilation outputCompilation, out ImmutableArray<Diagnostic> diagnostics)
     {
         
         var generator = new JanknericsGenerator();
