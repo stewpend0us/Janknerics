@@ -13,10 +13,10 @@ public class ConstructorTemplate
 
 public class ConstructorExpected
 {
-    public ConstructorExpected(ConstructorTemplate template)
+    public ConstructorExpected(ConstructorTemplate source)
     {
-        P = (int)template.P;
-        F = (int)template.F;
+        P = (int)source.P;
+        F = (int)source.F;
     }
     public int P { get; set; }
     public int F;
