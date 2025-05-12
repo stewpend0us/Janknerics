@@ -139,9 +139,11 @@ public class BasicTests
         RunTest(()=>t.P, 0.0f);
         RunTest(()=>t.F, 0.0f);
         
-        t.F = 1; // change before passing to make sure the value flows through
+        // change before passing to make sure the value flows through
+        t.P = 1;
+        t.F = 2;
         ConstructorGenerated g = new (t);
-        RunTest(()=>g.P, 0);
-        RunTest(()=>g.F, 1);
+        RunTest(()=>g.P, 1);
+        RunTest(()=>g.F, 2);
     }
 }
