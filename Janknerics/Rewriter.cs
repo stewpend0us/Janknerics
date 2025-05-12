@@ -76,6 +76,7 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
             yield return Rewrite(template, kv.Key, kv.Value);
     }
 
+    // TODO targetAndArgs here doesn't distinquish between attributes...but it needs to.
     private T ExtractJank<T>(T template, out List<(TypeSyntax, TypeSyntax?)> targetAndArgs) where T : MemberDeclarationSyntax
     {
         targetAndArgs = [];
@@ -131,6 +132,13 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
     private TypeDeclarationSyntax Rewrite(TypeDeclarationSyntax template, TypeSyntax targetType, GeneratorSpec targetInfo)
     {
         List<MemberDeclarationSyntax> members = [];
+        if (targetInfo.Constructor is not null)
+        {
+            var arg = SyntaxFactory.Parameter(SyntaxFactory.Identifier(targetInfo.Constructor.ToString()));
+            var args = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList([arg]));
+            var constructor = SyntaxFactory.ConstructorDeclaration(targetType.ToString()).WithParameterList(args);
+            members.Add(constructor);
+        }
         foreach (var item in targetInfo.Members)
         {
             

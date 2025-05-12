@@ -131,4 +131,15 @@ public class BasicTests
         RecordGenerated g = new ();
         RunTest(()=>g.F, 0.0);
     }
+    [TestMethod]
+    public void Constructor()
+    {
+        ConstructorTemplate t = new();
+        RunTest(()=>t.P, 0.0f);
+        RunTest(()=>t.F, 0.0f);
+        
+        ConstructorGenerated g = new (t);
+        RunTest(()=>g.P, 0.0);
+        RunTest(()=>t.F, 0.0f);
+    }
 }

@@ -8,6 +8,7 @@ public class BasicTests
     [DataTestMethod]
     [DataRow("AttributePassthrough.cs", 1, 0)]
     [DataRow("CustomType.cs", 1, 0)]
+    [DataRow("Constructor.cs", 1, 0)]
     [DataRow("DifferentNamespace.cs", 1, 0)]
     [DataRow("GenerateMultiple.cs", 2, 0)]
     [DataRow("GenerateMultipleDifferent.cs", 2, 0)]

@@ -22,6 +22,7 @@ public class TypeChangeOnlyTest
     [DataRow(typeof(AttributeExpected), typeof(AttributeGenerated))]
     [DataRow(typeof(StructExpected), typeof(StructGenerated))]
     [DataRow(typeof(RecordExpected), typeof(RecordGenerated))]
+    [DataRow(typeof(ConstructorExpected), typeof(ConstructorGenerated))]
     public void Test(Type expected, Type generated)
     {
         // check for typos
