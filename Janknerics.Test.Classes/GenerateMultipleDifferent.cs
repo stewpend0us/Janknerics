@@ -7,10 +7,10 @@ public partial class MultipleDifferentGenerated2;
 
 public class MultipleDifferentTemplate
 {
-    [Jankneric(typeof(MultipleDifferentGenerated1), ReplacementType = typeof(double))]
+    [Jankneric(typeof(MultipleDifferentGenerated1), NewType = typeof(double))]
     public float F = 0;
 
-    [Jankneric(typeof(MultipleDifferentGenerated2), ReplacementType = typeof(int))]
+    [Jankneric(typeof(MultipleDifferentGenerated2), NewType = typeof(int))]
     public long P { get; set; } = 0;
 };
 

@@ -6,7 +6,7 @@ public partial class CustomTypeGenerated;
 // the class to be used as a template by Janknerics
 public class CustomTypeTemplate
 {
-    [Jankneric(typeof(CustomTypeGenerated), ReplacementType = typeof(IExampleInterface))]
+    [Jankneric(typeof(CustomTypeGenerated), NewType = typeof(IExampleInterface))]
     public float F;
 };
 

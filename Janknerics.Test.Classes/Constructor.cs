@@ -7,12 +7,12 @@ public partial class ConstructorGenerated;
 [JanknericConstructor(typeof(ConstructorGenerated))]
 public class ConstructorTemplate
 {
-    [Jankneric(typeof(ConstructorGenerated), ReplacementType = typeof(int))]
+    [Jankneric(typeof(ConstructorGenerated), NewType = typeof(int), ConversionMethod = ConversionMethod.Cast, ConversionFunctionName = "LOL")]
     public float P { get; set; }  = 0;
-    [Jankneric(typeof(ConstructorGenerated), ReplacementType = typeof(int))]
+    [Jankneric(typeof(ConstructorGenerated), NewType = typeof(int))]
     public float F  = 0;
     
-    [Jankneric(typeof(ConstructorGenerated), ReplacementType = typeof(string))]
+    [Jankneric(typeof(ConstructorGenerated), NewType = typeof(string))]
     public float S  = 0;
 }
 

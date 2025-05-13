@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Xml;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -50,26 +51,17 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
         Dictionary<TypeSyntax, GeneratorSpec> spec = new (TypeSyntaxComparer);
         
         // remove Jankneric attributes from the TypeDeclaration
-        template = ExtractJank(template, out var constructorData);
-        foreach (var (target, arg) in constructorData)
-        {
-            if (!spec.ContainsKey(target))
-                spec.Add(target, new());
-            Debug.Assert(spec[target].Constructor is null, "constructor is not null");
-            Debug.Assert(arg is null, "arg is null");
-            spec[target].Constructor = SyntaxFactory.ParseTypeName(target.ToString());
-        }
-        
+        template = ExtractJank(template, ref spec);
         // remove Jankneric attributes from each MemberDeclaration
         foreach (var member in template.Members)
         {
-            var cleanMember = ExtractJank(member, out var memberData);
-            foreach (var (target, args) in memberData)
-            {
-                if (!spec.ContainsKey(target))
-                    spec.Add(target, new GeneratorSpec());
-                spec[target].Members.Add(new(cleanMember, args));
-            }
+            var cleanMember = ExtractJank(member, ref spec);
+        //    foreach (var (target, args) in memberData)
+        //    {
+        //        if (!spec.ContainsKey(target))
+        //            spec.Add(target, new GeneratorSpec());
+        //        spec[target].Members.Add(new(cleanMember, args));
+        //    }
         }
 
         template = template.WithMembers(SyntaxFactory.List(spec.Values.SelectMany(s => s.Members.Select(m => m.Template))));
@@ -79,9 +71,8 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
             yield return Rewrite(template, kv.Key, kv.Value);
     }
 
-    private T ExtractJank<T>(T template, out List<(TypeSyntax, TypeSyntax?)> targetAndArgs) where T : MemberDeclarationSyntax
+    private T ExtractJank<T>(T template, ref Dictionary<TypeSyntax, GeneratorSpec?> spec) where T : MemberDeclarationSyntax
     {
-        targetAndArgs = [];
         List<AttributeListSyntax> keptAttributes = [];
         List<AttributeListSyntax> jankAttributes = [];
         foreach (var attributeList in template.AttributeLists)
@@ -92,20 +83,44 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
             if (dirty.Attributes.Any())
                 jankAttributes.Add(dirty);
         }
-
+        template = (T)template.WithAttributeLists(SyntaxFactory.List(keptAttributes));
+        
         foreach (var jank in jankAttributes.SelectMany(attr => attr.Attributes))
         {
-            // already verified so we should be good to go
             // just need to fill out the spec
             var target = ((TypeOfExpressionSyntax)jank.ArgumentList!.Arguments[0].Expression).Type;
-            TypeSyntax? arg = null;
-            if (jank.ArgumentList!.Arguments
-                    .FirstOrDefault(a => a.NameEquals?.Name.ToString() == nameof(JanknericAttribute.ReplacementType))
-                    ?.Expression is TypeOfExpressionSyntax value)
-                arg = value.Type;
-            targetAndArgs.Add((target, arg));
+            if (!spec.ContainsKey(target))
+                spec.Add(target, new());
+            switch (jank.Name.ToString())
+            {
+                case JanknericConstructorAttribute.Name:
+                    spec[target]!.Constructor = new(SyntaxFactory.ParseTypeName(target.ToString()));
+                    break;
+                case JanknericAttribute.Name:
+                {
+                    var newTypeExpression =
+                        GetAttributeNamedArgument(jank.ArgumentList.Arguments, nameof(JanknericAttribute.NewType)) as
+                            TypeOfExpressionSyntax;
+                    var conversionMethod =
+                        GetAttributeNamedArgument(jank.ArgumentList.Arguments, nameof(JanknericAttribute.ConversionMethod))
+                            is not MemberAccessExpressionSyntax conversionMethodExpression
+                            ? ConversionMethod.Automatic
+                            : (ConversionMethod)Enum.Parse(typeof(ConversionMethod),
+                                conversionMethodExpression.Name.ToString());
+                    var conversionFunctionName = GetAttributeNamedArgument(jank.ArgumentList.Arguments,
+                        nameof(JanknericAttribute.ConversionFunctionName))?.ToString();
+
+                    spec[target]?.Members.Add(new(template, newTypeExpression?.Type, conversionMethod, conversionFunctionName));
+                    break;
+                }
+            }
         }
-        return (T)template.WithAttributeLists(SyntaxFactory.List(keptAttributes));
+        return template;
+    }
+
+    private ExpressionSyntax? GetAttributeNamedArgument(SeparatedSyntaxList<AttributeArgumentSyntax> args, string argName)
+    {
+        return args.FirstOrDefault(a => a.NameEquals?.Name.ToString() == argName)?.Expression;
     }
 
     /// <summary>
@@ -165,7 +180,7 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
                 .WithType(SyntaxFactory.ParseTypeName(template.Identifier.ToString()));
             var args = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList([arg]));
             var constructedType = SyntaxFactory.Identifier(targetType.ToString());
-            var body = SyntaxFactory.Block(ConstructorStatements(originalType, newMembers, null));
+            var body = SyntaxFactory.Block(ConstructorStatements(originalType, ref newMembers, targetInfo.Members));
             var constructor = SyntaxFactory.ConstructorDeclaration([], modifiers, constructedType, args, null, body);
             newMembers.Add(constructor);
         }
@@ -186,7 +201,7 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
         }
     }
 
-    private static SyntaxList<StatementSyntax> ConstructorStatements(List<TypeSyntax> originalType, List<MemberDeclarationSyntax> members, string? conversionMethod)
+    private static SyntaxList<StatementSyntax> ConstructorStatements(List<TypeSyntax> originalType, ref List<MemberDeclarationSyntax> members, List<GeneratorMember> memberInfo)
     {
         Debug.Assert(originalType.Count == members.Count);
         
@@ -194,30 +209,69 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
 
         for (var i = 0; i < members.Count; i++)
         {
+            StatementSyntax? statement;
             switch (members[i])
             {
                 case PropertyDeclarationSyntax property:
-                    statements.Add(
-                        ConstructorAssign(property.Identifier, property.Type, originalType[i], conversionMethod));
+                    statement = ConstructorAssign(property.Identifier, property.Type, originalType[i], memberInfo[i]);
+                    if (statement is not EmptyStatementSyntax)
+                        members[i] = property.WithInitializer(null).WithTrailingTrivia(null).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.None));
                     break;
                 case FieldDeclarationSyntax field:
-                    statements.Add(
-                        ConstructorAssign(field.Declaration.Variables.First().Identifier, field.Declaration.Type, originalType[i], conversionMethod));
+                    statement = ConstructorAssign(field.Declaration.Variables.First().Identifier, field.Declaration.Type, originalType[i], memberInfo[i]);
+                    if (statement is not EmptyStatementSyntax)
+                        members[i] = field.WithDeclaration(field.Declaration.WithVariables(SyntaxFactory.SeparatedList([field.Declaration.Variables.First().WithInitializer(null)])));
+                    break;
+                default:
+                    statement = SyntaxFactory.EmptyStatement();
                     break;
             }
+
+            statements.Add(statement);
         }
         
         return SyntaxFactory.List(statements);
     }
 
-    private static StatementSyntax ConstructorAssign(SyntaxToken name, TypeSyntax leftType, TypeSyntax rightType, string? conversionMethod)
+    private static StatementSyntax ConstructorAssign(SyntaxToken name, TypeSyntax leftType, TypeSyntax rightType, GeneratorMember conversionMethod)
     {
-        // if there is a conversion method use it.
-        if (conversionMethod is not null)
-            return SyntaxFactory.ParseStatement($"{name} = {conversionMethod}({ConstructorArgName}.{name});");
-        // if they're the same type it's easy.
+        switch (conversionMethod.Method)
+        {
+            case ConversionMethod.Automatic:
+                return ConstructorAssignAuto(name, leftType, rightType, conversionMethod);
+            case ConversionMethod.Assign:
+                return SyntaxFactory.ParseStatement($"{name} = {ConstructorArgName}.{name};");
+            case ConversionMethod.Cast:
+                return SyntaxFactory.ParseStatement($"{name} = ({leftType}){ConstructorArgName}.{name};");
+            case ConversionMethod.Construct:
+                return SyntaxFactory.ParseStatement($"{name} = new ({ConstructorArgName}.{name});");
+            case ConversionMethod.Specified:
+                if (conversionMethod.CustomMethodName is not null)
+                    return SyntaxFactory.ParseStatement($"{name} = {conversionMethod.CustomMethodName}({ConstructorArgName}.{name});");
+                // TODO this is an error
+                break;
+            default:
+                // TODO give a warning!
+                break;
+        }
+        
+        return SyntaxFactory.EmptyStatement();
+    }
+
+    private static StatementSyntax ConstructorAssignAuto(SyntaxToken name, TypeSyntax leftType, TypeSyntax rightType, GeneratorMember conversionMethod)
+    {
+        
+        if (conversionMethod.CustomMethodName is not null)
+        {
+            conversionMethod.Method = ConversionMethod.Specified;
+            return ConstructorAssign(name, leftType, rightType, conversionMethod);
+        }
+
         if (leftType.IsEquivalentTo(rightType))
-            return SyntaxFactory.ParseStatement($"{name} = {ConstructorArgName}.{name};");
+        {
+            conversionMethod.Method = ConversionMethod.Assign;
+            return ConstructorAssign(name, leftType, rightType, conversionMethod);
+        }
         
         if (leftType is PredefinedTypeSyntax left)
         {
@@ -226,17 +280,20 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
                 case SyntaxKind.StringKeyword: 
                     return SyntaxFactory.ParseStatement($"{name} = {ConstructorArgName}.{name}.ToString();");
                 case SyntaxKind.ObjectKeyword:
-                    return SyntaxFactory.ParseStatement($"{name} = {ConstructorArgName}.{name};");
+                    conversionMethod.Method = ConversionMethod.Assign;
+                    return ConstructorAssign(name, leftType, rightType, conversionMethod);
             }
             if (rightType is PredefinedTypeSyntax right)
             {
-                return SyntaxFactory.ParseStatement($"{name} = ({left}){ConstructorArgName}.{name};");
+                // TODO surely we could do better?
+                conversionMethod.Method = ConversionMethod.Cast;
+                return ConstructorAssign(name, leftType, rightType, conversionMethod);
             }
         }
-
-        return SyntaxFactory.EmptyStatement(); // we tried i guess? TODO give a warning!
+        
+        // TODO error they should specify a conversion method or function
+        return SyntaxFactory.EmptyStatement();
     }
-
     public override IEnumerable<TypeDeclarationSyntax>? VisitClassDeclaration(ClassDeclarationSyntax node) =>
         VisitTypeDeclaration(node);   
 

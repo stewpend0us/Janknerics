@@ -28,20 +28,20 @@ partial class MyClassAllInts;
 
 class MyModelClass
 {
-    [Jankneric(typeof(MyClassDoubles), ReplacementType = typeof(double))]
-    [Jankneric(typeof(MyClassAllInts), ReplacementType = typeof(int))]
+    [Jankneric(typeof(MyClassDoubles), NewType = typeof(double))]
+    [Jankneric(typeof(MyClassAllInts), NewType = typeof(int))]
     public float P1;
     
-    [Jankneric(typeof(MyClassDoubles), ReplacementType = typeof(double))]
-    [Jankneric(typeof(MyClassAllInts), ReplacementType = typeof(int))]
+    [Jankneric(typeof(MyClassDoubles), NewType = typeof(double))]
+    [Jankneric(typeof(MyClassAllInts), NewType = typeof(int))]
     public float P2 { get; }
     
-    [Jankneric(typeof(MyClassDoubles), ReplacementType = typeof(long))]
-    [Jankneric(typeof(MyClassAllInts), ReplacementType = typeof(int))]
+    [Jankneric(typeof(MyClassDoubles), NewType = typeof(long))]
+    [Jankneric(typeof(MyClassAllInts), NewType = typeof(int))]
     public int P3;
     
-    [Jankneric(typeof(MyClassDoubles), ReplacementType = typeof(string))]
-    [Jankneric(typeof(MyClassAllInts), ReplacementType = typeof(int))]
+    [Jankneric(typeof(MyClassDoubles), NewType = typeof(string))]
+    [Jankneric(typeof(MyClassAllInts), NewType = typeof(int))]
     public string P4;
 }
 ```

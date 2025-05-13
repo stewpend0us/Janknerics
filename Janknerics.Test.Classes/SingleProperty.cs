@@ -4,7 +4,7 @@ public partial class PropertyGenerated;
 
 public class PropertyTemplate
 {
-    [Jankneric(typeof(PropertyGenerated),ReplacementType = typeof(int))]
+    [Jankneric(typeof(PropertyGenerated),NewType = typeof(int))]
     public float P { get; set; }  = 0;
 }
 

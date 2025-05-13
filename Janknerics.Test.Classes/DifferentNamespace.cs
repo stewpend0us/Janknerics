@@ -3,7 +3,7 @@ public partial class FieldGenerated;
 
 public class FieldTemplate
 {
-    [Jankneric(typeof(FieldGenerated),ReplacementType = typeof(double))]
+    [Jankneric(typeof(FieldGenerated),NewType = typeof(double))]
     public float F = 0;
 };
 

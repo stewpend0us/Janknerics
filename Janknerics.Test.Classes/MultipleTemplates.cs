@@ -5,13 +5,13 @@ public partial class MultiTemplateGenerated2;
 
 public class MultiTemplateTemplate1
 {
-    [Jankneric(typeof(MultiTemplateGenerated1), ReplacementType = typeof(double))]
+    [Jankneric(typeof(MultiTemplateGenerated1), NewType = typeof(double))]
     public float F = 0;
 };
 
 public class MultiTemplateTemplate2
 {
-    [Jankneric(typeof(MultiTemplateGenerated2),ReplacementType = typeof(long))]
+    [Jankneric(typeof(MultiTemplateGenerated2),NewType = typeof(long))]
     public int F = 0;
 };
 

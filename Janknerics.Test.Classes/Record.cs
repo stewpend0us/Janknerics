@@ -3,7 +3,7 @@ public partial record RecordGenerated;
 
 public record RecordTemplate
 {
-    [Jankneric(typeof(RecordGenerated),ReplacementType = typeof(double))]
+    [Jankneric(typeof(RecordGenerated),NewType = typeof(double))]
     public float F = 0;
 };
 

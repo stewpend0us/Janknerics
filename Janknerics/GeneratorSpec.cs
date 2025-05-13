@@ -6,10 +6,17 @@ namespace Janknerics;
 /// <summary>
 /// 
 /// </summary>
-internal class GeneratorMember(MemberDeclarationSyntax template, TypeSyntax? newType)
+internal class GeneratorMember(MemberDeclarationSyntax template, TypeSyntax? newType, ConversionMethod method, string? customMethodName)
 {
-    public MemberDeclarationSyntax Template = template;
-    public TypeSyntax? NewType = newType;
+    public readonly MemberDeclarationSyntax Template = template;
+    public readonly TypeSyntax? NewType = newType;
+    public ConversionMethod Method = method;
+    public string? CustomMethodName = customMethodName;
+}
+
+internal class GeneratorConstructor(TypeSyntax? type)
+{
+    public TypeSyntax? Type = type;
 }
 
 /// <summary>
@@ -17,7 +24,7 @@ internal class GeneratorMember(MemberDeclarationSyntax template, TypeSyntax? new
 /// </summary>
 internal class GeneratorSpec
 {
-    public TypeSyntax? Constructor;
+    public GeneratorConstructor? Constructor;
     public readonly List<GeneratorMember> Members = [];
 }
 

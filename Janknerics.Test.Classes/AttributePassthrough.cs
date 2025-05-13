@@ -8,7 +8,7 @@ public partial class AttributeGenerated;
 public class AttributeTemplate
 {
     [JankTest]
-    [Jankneric(typeof(AttributeGenerated),ReplacementType = typeof(double))]
+    [Jankneric(typeof(AttributeGenerated),NewType = typeof(double))]
     public float F = 0;
 };
 
