@@ -11,6 +11,8 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
     //private static readonly DiagnosticDescriptor RuleTest = new DiagnosticDescriptor("JANK0000","title","format","category",DiagnosticSeverity.Warning, true);
 
     //public Action<Diagnostic>? ReportDiagnostic { get; set; }
+    
+    public static readonly SyntaxToken ConstructorArgName = SyntaxFactory.Identifier("source");
 
     /// <summary>
     /// compare TypeSyntax using their string representation
@@ -129,38 +131,43 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
         dirty = SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(dirtyList));
     }
 
+    
     private TypeDeclarationSyntax Rewrite(TypeDeclarationSyntax template, TypeSyntax targetType, GeneratorSpec targetInfo)
     {
-        List<MemberDeclarationSyntax> members = [];
+        List<TypeSyntax> originalType = [];
+        List<MemberDeclarationSyntax> newMembers = [];
         foreach (var item in targetInfo.Members)
         {
             
             switch (item.Template)
             {
                 case FieldDeclarationSyntax field:
-                    members.Add(item.NewType is null
+                    newMembers.Add(item.NewType is null
                         ? field
                         : field.WithDeclaration(field.Declaration.WithType(item.NewType)));
+
+                    originalType.Add(field.Declaration.Type);
                     break;
                 case PropertyDeclarationSyntax property:
-                    members.Add(item.NewType is null
+                    newMembers.Add(item.NewType is null
                         ? property
                         : property.WithType(item.NewType));
+                    
+                    originalType.Add(property.Type);
                     break;
             }
         }
         
         if (targetInfo.Constructor is not null)
         {
-            const string argName = "source";
             var modifiers = SyntaxFactory.TokenList([SyntaxFactory.Token(SyntaxKind.PublicKeyword)]);
-            var arg = SyntaxFactory.Parameter(SyntaxFactory.Identifier(argName))
+            var arg = SyntaxFactory.Parameter(ConstructorArgName)
                 .WithType(SyntaxFactory.ParseTypeName(template.Identifier.ToString()));
             var args = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList([arg]));
             var constructedType = SyntaxFactory.Identifier(targetType.ToString());
-            var body = SyntaxFactory.Block(ConstructorStatements(members));
+            var body = SyntaxFactory.Block(ConstructorStatements(originalType, newMembers, null));
             var constructor = SyntaxFactory.ConstructorDeclaration([], modifiers, constructedType, args, null, body);
-            members.Add(constructor);
+            newMembers.Add(constructor);
         }
         
         List<SyntaxToken> modifiersToAdd = [];
@@ -170,7 +177,7 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
         return template
             .WithIdentifier(SyntaxFactory.Identifier(targetType.ToString()))
             .WithModifiers(SyntaxFactory.TokenList(modifiersToAdd.ToArray()))
-            .WithMembers(SyntaxFactory.List(members));
+            .WithMembers(SyntaxFactory.List(newMembers));
         
         void AddIfAbsent(SyntaxKind kind)
         {
@@ -179,33 +186,57 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
         }
     }
 
-    private static SyntaxList<StatementSyntax> ConstructorStatements(List<MemberDeclarationSyntax> members)
+    private static SyntaxList<StatementSyntax> ConstructorStatements(List<TypeSyntax> originalType, List<MemberDeclarationSyntax> members, string? conversionMethod)
     {
+        Debug.Assert(originalType.Count == members.Count);
+        
         List<StatementSyntax> statements = [];
 
-        foreach (var member in members)
+        for (var i = 0; i < members.Count; i++)
         {
-            TypeSyntax type;
-            SyntaxToken name;
-            switch (member)
+            switch (members[i])
             {
                 case PropertyDeclarationSyntax property:
-                    name = property.Identifier;
-                    type = property.Type;
+                    statements.Add(
+                        ConstructorAssign(property.Identifier, property.Type, originalType[i], conversionMethod));
                     break;
                 case FieldDeclarationSyntax field:
-                    name = field.Declaration.Variables.First().Identifier;
-                    type = field.Declaration.Type;
+                    statements.Add(
+                        ConstructorAssign(field.Declaration.Variables.First().Identifier, field.Declaration.Type, originalType[i], conversionMethod));
                     break;
-                default:
-                    continue;
             }
-            statements.Add(SyntaxFactory.ParseStatement($"{name} = ({type})source.{name};"));
         }
         
-        return SyntaxFactory.List<StatementSyntax>(statements);
+        return SyntaxFactory.List(statements);
     }
-    
+
+    private static StatementSyntax ConstructorAssign(SyntaxToken name, TypeSyntax leftType, TypeSyntax rightType, string? conversionMethod)
+    {
+        // if there is a conversion method use it.
+        if (conversionMethod is not null)
+            return SyntaxFactory.ParseStatement($"{name} = {conversionMethod}({ConstructorArgName}.{name});");
+        // if they're the same type it's easy.
+        if (leftType.IsEquivalentTo(rightType))
+            return SyntaxFactory.ParseStatement($"{name} = {ConstructorArgName}.{name};");
+        
+        if (leftType is PredefinedTypeSyntax left)
+        {
+            switch (left.Keyword.Kind())
+            {
+                case SyntaxKind.StringKeyword: 
+                    return SyntaxFactory.ParseStatement($"{name} = {ConstructorArgName}.{name}.ToString();");
+                case SyntaxKind.ObjectKeyword:
+                    return SyntaxFactory.ParseStatement($"{name} = {ConstructorArgName}.{name};");
+            }
+            if (rightType is PredefinedTypeSyntax right)
+            {
+                return SyntaxFactory.ParseStatement($"{name} = ({left}){ConstructorArgName}.{name};");
+            }
+        }
+
+        return SyntaxFactory.EmptyStatement(); // we tried i guess? TODO give a warning!
+    }
+
     public override IEnumerable<TypeDeclarationSyntax>? VisitClassDeclaration(ClassDeclarationSyntax node) =>
         VisitTypeDeclaration(node);   
 

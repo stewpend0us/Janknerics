@@ -1,4 +1,6 @@
-﻿namespace Janknerics.Test.Classes;
+﻿using System.Globalization;
+
+namespace Janknerics.Test.Classes;
 
 public partial class ConstructorGenerated;
 
@@ -9,6 +11,9 @@ public class ConstructorTemplate
     public float P { get; set; }  = 0;
     [Jankneric(typeof(ConstructorGenerated), ReplacementType = typeof(int))]
     public float F  = 0;
+    
+    [Jankneric(typeof(ConstructorGenerated), ReplacementType = typeof(string))]
+    public float S  = 0;
 }
 
 public class ConstructorExpected
@@ -17,8 +22,10 @@ public class ConstructorExpected
     {
         P = (int)source.P;
         F = (int)source.F;
+        S = source.S.ToString();
     }
     public int P { get; set; }
     public int F;
+    public string S;
 };
 
