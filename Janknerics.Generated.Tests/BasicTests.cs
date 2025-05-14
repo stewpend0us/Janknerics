@@ -148,4 +148,16 @@ public class BasicTests
         RunTest(()=>g.P, 1);
         RunTest(()=>g.F, 2);
     }
+    
+    [TestMethod]
+    public void PrimaryConstructor()
+    {
+        PrimaryConstructorTemplate t = new(1);
+        RunTest(()=>t.F, 1.0f);
+        
+        // change before passing to make sure the value flows through
+        t.F = 2;
+        PrimaryConstructorGenerated g = new (t);
+        RunTest(()=>g.F, 2);
+    }
 }

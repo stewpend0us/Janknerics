@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Xml;
+using Janknerics.Attributes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -71,7 +71,7 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
             yield return Rewrite(template, kv.Key, kv.Value);
     }
 
-    private T ExtractJank<T>(T template, ref Dictionary<TypeSyntax, GeneratorSpec?> spec) where T : MemberDeclarationSyntax
+    private T ExtractJank<T>(T template, ref Dictionary<TypeSyntax, GeneratorSpec> spec) where T : MemberDeclarationSyntax
     {
         List<AttributeListSyntax> keptAttributes = [];
         List<AttributeListSyntax> jankAttributes = [];

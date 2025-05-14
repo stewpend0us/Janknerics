@@ -1,4 +1,6 @@
-﻿namespace Janknerics.Test.DifferentClasses;
+﻿using Janknerics.Attributes;
+
+namespace Janknerics.Test.DifferentClasses;
 public partial class FieldGenerated;
 
 public class FieldTemplate

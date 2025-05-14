@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        
+        <!-- NuGet package properties -->
+        <EnablePackageValidation>true</EnablePackageValidation>
+        <PackageId>Janknerics.Attributes</PackageId>
+        <Version>0.0.4</Version>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/stewpend0us/Janknerics</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/stewpend0us/Janknerics.git</RepositoryUrl>
+        <Authors>Stewart Wadsworth</Authors>
+        <Company />
+        <Description>An alternative to built-in generics (with some bonus features)</Description>
+        <PackageTags>generics, source generator, codegen, dto, mapper, map, mapping</PackageTags>
+        <Copyright>Copyright (c) Stewart Wadsworth 2025</Copyright>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Include the README  and LICENSE -->
+        <None Include="../LICENSE" Pack="true" PackagePath="\" Visible="false"/>
+    </ItemGroup>
+</Project>

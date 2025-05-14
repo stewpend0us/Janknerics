@@ -1,3 +1,5 @@
+using Janknerics.Attributes;
+
 namespace Janknerics.Test.Classes;
 
 public partial class MultiTemplateGenerated1;

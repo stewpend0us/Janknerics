@@ -1,4 +1,6 @@
-﻿namespace Janknerics.Test.Classes;
+﻿using Janknerics.Attributes;
+
+namespace Janknerics.Test.Classes;
 public partial record RecordGenerated;
 
 public record RecordTemplate

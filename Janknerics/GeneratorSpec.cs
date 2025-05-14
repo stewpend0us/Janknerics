@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+using Janknerics.Attributes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Janknerics;

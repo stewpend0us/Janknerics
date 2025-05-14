@@ -8,14 +8,19 @@
         <AssemblyName>Janknerics</AssemblyName>
         
         <!-- NuGet package properties -->
+        <EnablePackageValidation>true</EnablePackageValidation>
         <PackageId>Janknerics</PackageId>
-        <Version>0.0.1</Version>
-        <Authors>Stewart Wadsworth</Authors>
-        <Description>An alternative to built-in generics (with some bonus features)</Description>
-        <PackageTags>generics;source generator;codegen</PackageTags>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Version>0.0.4</Version>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <RepositoryUrl>https://github.com/stewpend0us/janknerics</RepositoryUrl>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/stewpend0us/Janknerics</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/stewpend0us/Janknerics.git</RepositoryUrl> 
+        <Authors>Stewart Wadsworth</Authors>
+        <Company />
+        <Description>An alternative to built-in generics (with some bonus features)</Description>
+        <PackageTags>generics, source generator, codegen, dto, mapper, map, mapping</PackageTags>
+        <Copyright>Copyright (c) Stewart Wadsworth 2025</Copyright>
 
         <!-- Source Generator properties -->
         <IsRoslynComponent>true</IsRoslynComponent>
@@ -23,6 +28,7 @@
         <DevelopmentDependency>true</DevelopmentDependency>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <ImplicitUsings>enable</ImplicitUsings>
+        <NoWarn>NU5128</NoWarn>
     </PropertyGroup>
     
     <ItemGroup>
@@ -34,8 +40,17 @@
         <!-- Package the generator dll in the analyzers/dotnet/cs path -->
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 
-        <!-- Include the README -->
+        <!-- Include the Attributes so they don't have to go get it separately -->
+        <None Include="$(OutputPath)\Janknerics.Attributes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+        <None Include="$(OutputPath)\Janknerics.Attributes.dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="false" />
+        
+        <!-- Include the README  and LICENSE -->
         <None Include="../README.md" Pack="true" PackagePath="\" />
+        <None Include="../LICENSE" Pack="true" PackagePath="\" Visible="false"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Janknerics.Attributes\Janknerics.Attributes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true"/>
     </ItemGroup>
 
 </Project>
