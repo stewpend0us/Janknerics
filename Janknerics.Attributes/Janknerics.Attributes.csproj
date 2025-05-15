@@ -6,7 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         
-        <!-- NuGet package properties -->
+        <!-- NuGet package properties
         <EnablePackageValidation>true</EnablePackageValidation>
         <PackageId>Janknerics.Attributes</PackageId>
         <Version>0.0.5</Version>
@@ -20,6 +20,7 @@
         <PackageTags>generics, source generator, codegen, dto, mapper, map, mapping</PackageTags>
         <Copyright>Copyright (c) Stewart Wadsworth 2025</Copyright>
         <ImplicitUsings>enable</ImplicitUsings>
+        -->
     </PropertyGroup>
 
     <ItemGroup>
