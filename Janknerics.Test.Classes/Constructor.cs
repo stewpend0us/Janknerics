@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using Janknerics.Attributes;
+﻿using Janknerics.Attributes;
 
 namespace Janknerics.Test.Classes;
 
@@ -8,7 +7,7 @@ public partial class ConstructorGenerated;
 [JanknericConstructor(typeof(ConstructorGenerated))]
 public class ConstructorTemplate
 {
-    [Jankneric(typeof(ConstructorGenerated), NewType = typeof(int), ConversionMethod = ConversionMethod.Cast, ConversionFunctionName = "LOL")]
+    [Jankneric(typeof(ConstructorGenerated), NewType = typeof(int), ConversionMethod = ConversionMethod.Cast, Template = "LOL")]
     public float P { get; set; }  = 0;
     [Jankneric(typeof(ConstructorGenerated), NewType = typeof(int))]
     public float F  = 0;

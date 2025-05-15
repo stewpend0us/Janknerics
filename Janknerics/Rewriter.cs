@@ -3,6 +3,7 @@ using Janknerics.Attributes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SmartFormat;
 
 namespace Janknerics;
 
@@ -84,6 +85,12 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
                 jankAttributes.Add(dirty);
         }
         template = (T)template.WithAttributeLists(SyntaxFactory.List(keptAttributes));
+        if (template is ClassDeclarationSyntax classDeclaration)
+            template = (T)(MemberDeclarationSyntax)classDeclaration.WithParameterList(null);
+        if (template is StructDeclarationSyntax structDeclaration)
+            template = (T)(MemberDeclarationSyntax)structDeclaration.WithParameterList(null);
+        if (template is RecordDeclarationSyntax recordDeclaration)
+            template = (T)(MemberDeclarationSyntax)recordDeclaration.WithParameterList(null);
         
         foreach (var jank in jankAttributes.SelectMany(attr => attr.Attributes))
         {
@@ -98,23 +105,25 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
                     break;
                 case JanknericAttribute.Name:
                 {
-                    var newTypeExpression =
-                        GetAttributeNamedArgument(jank.ArgumentList.Arguments, nameof(JanknericAttribute.NewType)) as
+                    var newTypeExpression = GetAttributeNamedArgument(
+                            jank.ArgumentList.Arguments, nameof(JanknericAttribute.NewType)) as
                             TypeOfExpressionSyntax;
-                    var conversionMethod =
-                        GetAttributeNamedArgument(jank.ArgumentList.Arguments, nameof(JanknericAttribute.ConversionMethod))
+                    var conversionMethod = GetAttributeNamedArgument(
+                            jank.ArgumentList.Arguments, nameof(JanknericAttribute.ConversionMethod))
                             is not MemberAccessExpressionSyntax conversionMethodExpression
                             ? ConversionMethod.Automatic
                             : (ConversionMethod)Enum.Parse(typeof(ConversionMethod),
                                 conversionMethodExpression.Name.ToString());
-                    var conversionFunctionName = GetAttributeNamedArgument(jank.ArgumentList.Arguments,
-                        nameof(JanknericAttribute.ConversionFunctionName))?.ToString();
+                    var conversionFunctionName = GetAttributeNamedArgument(
+                        jank.ArgumentList.Arguments,
+                        nameof(JanknericAttribute.Template))?.ToString();
 
                     spec[target]?.Members.Add(new(template, newTypeExpression?.Type, conversionMethod, conversionFunctionName));
                     break;
                 }
             }
         }
+
         return template;
     }
 
@@ -246,8 +255,18 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
             case ConversionMethod.Construct:
                 return SyntaxFactory.ParseStatement($"{name} = new ({ConstructorArgName}.{name});");
             case ConversionMethod.Specified:
-                if (conversionMethod.CustomMethodName is not null)
-                    return SyntaxFactory.ParseStatement($"{name} = {conversionMethod.CustomMethodName}({ConstructorArgName}.{name});");
+                if (conversionMethod.StringTemplate is not null)
+                {
+                    var templateArgs = new
+                    {
+                        LeftName = $"{name}", 
+                        RightName = $"{ConstructorArgName}.{name}", 
+                        LeftType = $"{leftType}", 
+                        RightType = $"{rightType}",
+                    };
+                    return SyntaxFactory.ParseStatement(Smart.Format(conversionMethod.StringTemplate, templateArgs));
+                }
+
                 // TODO this is an error
                 break;
             default:
@@ -261,7 +280,7 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
     private static StatementSyntax ConstructorAssignAuto(SyntaxToken name, TypeSyntax leftType, TypeSyntax rightType, GeneratorMember conversionMethod)
     {
         
-        if (conversionMethod.CustomMethodName is not null)
+        if (conversionMethod.StringTemplate is not null)
         {
             conversionMethod.Method = ConversionMethod.Specified;
             return ConstructorAssign(name, leftType, rightType, conversionMethod);
@@ -300,8 +319,8 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
     public override IEnumerable<TypeDeclarationSyntax>? VisitStructDeclaration(StructDeclarationSyntax node) =>
         VisitTypeDeclaration(node);
 
-    public override IEnumerable<TypeDeclarationSyntax>? VisitInterfaceDeclaration(InterfaceDeclarationSyntax node) =>
-        VisitTypeDeclaration(node);
+    //public override IEnumerable<TypeDeclarationSyntax>? VisitInterfaceDeclaration(InterfaceDeclarationSyntax node) =>
+    //    VisitTypeDeclaration(node);
 
     public override IEnumerable<TypeDeclarationSyntax>? VisitRecordDeclaration(RecordDeclarationSyntax node) =>
         VisitTypeDeclaration(node);

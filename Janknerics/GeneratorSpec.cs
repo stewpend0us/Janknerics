@@ -6,12 +6,12 @@ namespace Janknerics;
 /// <summary>
 /// 
 /// </summary>
-internal class GeneratorMember(MemberDeclarationSyntax template, TypeSyntax? newType, ConversionMethod method, string? customMethodName)
+internal class GeneratorMember(MemberDeclarationSyntax template, TypeSyntax? newType, ConversionMethod method, string? stringTemplate)
 {
     public readonly MemberDeclarationSyntax Template = template;
     public readonly TypeSyntax? NewType = newType;
     public ConversionMethod Method = method;
-    public string? CustomMethodName = customMethodName;
+    public string? StringTemplate = stringTemplate;
 }
 
 internal class GeneratorConstructor(TypeSyntax? type)

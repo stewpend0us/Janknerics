@@ -10,7 +10,7 @@ public sealed class JanknericAttribute(Type targetType) : Attribute
     public Type TargetType => targetType;
     public Type? NewType { get; set; }
     public ConversionMethod ConversionMethod { get; set; } = ConversionMethod.Automatic;
-    public string? ConversionFunctionName { get; set; }
+    public string? Template { get; set; }
 }
 
 public enum ConversionMethod
