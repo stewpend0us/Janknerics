@@ -9,7 +9,7 @@
         <!-- NuGet package properties -->
         <EnablePackageValidation>true</EnablePackageValidation>
         <PackageId>Janknerics.Attributes</PackageId>
-        <Version>0.0.4</Version>
+        <Version>0.0.5</Version>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <RepositoryType>git</RepositoryType>
         <PackageProjectUrl>https://github.com/stewpend0us/Janknerics</PackageProjectUrl>

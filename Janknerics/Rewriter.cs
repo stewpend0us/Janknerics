@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Janknerics.Attributes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -116,9 +119,21 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
                                 conversionMethodExpression.Name.ToString());
                     var conversionFunctionName = GetAttributeNamedArgument(
                         jank.ArgumentList.Arguments,
-                        nameof(JanknericAttribute.Template))?.ToString();
+                        nameof(JanknericAttribute.Template));
+                    string? stringFormat = null;
+                    if (conversionFunctionName is LiteralExpressionSyntax literal)
+                        stringFormat = literal.Token.ValueText;
+                    //else if (conversionFunctionName is InterpolatedStringExpressionSyntax interp)
+                    //{
+                    //    if (interp.Contents.FirstOrDefault() is InterpolatedStringTextSyntax text)
+                    //        stringFormat = text.TextToken.ValueText;
+                    //}
+                    else
+                    {
+                        // TODO error/warning
+                    }
 
-                    spec[target]?.Members.Add(new(template, newTypeExpression?.Type, conversionMethod, conversionFunctionName));
+                    spec[target]?.Members.Add(new(template, newTypeExpression?.Type, conversionMethod, stringFormat));
                     break;
                 }
             }
@@ -264,7 +279,15 @@ internal class Rewriter : CSharpSyntaxVisitor<IEnumerable<TypeDeclarationSyntax>
                         LeftType = $"{leftType}", 
                         RightType = $"{rightType}",
                     };
-                    return SyntaxFactory.ParseStatement(Smart.Format(conversionMethod.StringTemplate, templateArgs));
+                    try
+                    {
+                        var str = Smart.Format(conversionMethod.StringTemplate, templateArgs);
+                        return SyntaxFactory.ParseStatement(str);
+                    }
+                    catch
+                    {
+                        //TODO warning or error?
+                    }
                 }
 
                 // TODO this is an error

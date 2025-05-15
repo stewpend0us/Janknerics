@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Janknerics.Attributes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 

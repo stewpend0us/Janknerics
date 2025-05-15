@@ -20,7 +20,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Janknerics\Janknerics.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-        <ProjectReference Include="..\Janknerics.Attributes\Janknerics.Attributes.csproj" ReferenceOutputAssembly="true" />
+        <ProjectReference Include="..\Janknerics.Attributes\Janknerics.Attributes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+
     </ItemGroup>
 
     <ItemGroup>
