@@ -20,6 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Janknerics.Attributes\Janknerics.Attributes.csproj" />
       <ProjectReference Include="..\Janknerics\Janknerics.csproj" />
     </ItemGroup>
 

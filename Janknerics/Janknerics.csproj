@@ -10,7 +10,7 @@
         <!-- NuGet package properties -->
         <EnablePackageValidation>true</EnablePackageValidation>
         <PackageId>Janknerics</PackageId>
-        <Version>0.0.13</Version>
+        <Version>0.0.14</Version>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <RepositoryType>git</RepositoryType>
@@ -42,9 +42,10 @@
         <!-- Generator dependencies -->
         <PackageReference Include="SmartFormat" Version="3.6.0" GeneratePathProperty="true" PrivateAssets="all" />
         <PackageReference Include="ZString" Version="2.6.0" GeneratePathProperty="true" PrivateAssets="all" />
-        <ProjectReference Include="..\Janknerics.Attributes\Janknerics.Attributes.csproj" />
+        <ProjectReference Include="..\Janknerics.Attributes\Janknerics.Attributes.csproj" PrivateAssets="all" />
     </ItemGroup>
     
+    <!-- This allows our local references to this project as an analyzer to work (Janknerics.Generated.Tests) -->
     <PropertyGroup>
         <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
     </PropertyGroup>
@@ -55,22 +56,44 @@
             <TargetPathWithTargetPlatformMoniker Include="$(PKGZString)\lib\netstandard2.0\ZString.dll" IncludeRuntimeDependency="false" />
         </ItemGroup>
     </Target>
+    <!-- This allows our local references to this project as an analyzer to work (Janknerics.Generated.Tests) -->
 
+    <!-- Manually install the relevant dependencies for nuget -->
     <ItemGroup>
+        <!-- needed by the analyzer -->
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-
         <None Include="$(OutputPath)\Janknerics.Attributes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-        <None Include="$(OutputPath)\Janknerics.Attributes.dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="false" />
         <None Include="$(PKGSmartFormat)\lib\netstandard2.0\SmartFormat.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+
+        <!-- -->
         <!--
-        <None Include="$(PKGSmartFormat)\lib\netstandard2.0\SmartFormat.dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="false" />
-        <None Include="$(PKGZString)\lib\netstandard2.0\ZString.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-        <None Include="$(PKGZString)\lib\netstandard2.0\ZString.dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="false" />
+        <None Include="$(OutputPath)\Janknerics.Attributes.dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="false" />
         -->
         
         <None Include="../README.md" Pack="true" PackagePath="\" />
         <None Include="../LICENSE" Pack="true" PackagePath="\" Visible="false"/>
     </ItemGroup>
+
+    <!-- Fix for dotnet pack not including private (project) references -->
+    <PropertyGroup>
+        <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+    </PropertyGroup>
+
+    <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
+        <ItemGroup>
+            <!-- Filter out unnecessary files -->
+            <_ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')->WithMetadataValue('PrivateAssets', 'All'))"/>
+        </ItemGroup>
+
+        <!-- Print batches for debug purposes -->
+        <Message Text="Batch for .nupkg: ReferenceCopyLocalPaths = @(_ReferenceCopyLocalPaths), ReferenceCopyLocalPaths.DestinationSubDirectory = %(_ReferenceCopyLocalPaths.DestinationSubDirectory) Filename = %(_ReferenceCopyLocalPaths.Filename) Extension = %(_ReferenceCopyLocalPaths.Extension)" Importance="High" Condition="'@(_ReferenceCopyLocalPaths)' != ''" />
+
+        <ItemGroup>
+            <!-- Add file to package with consideration of sub folder. If empty, the root folder is chosen. -->
+            <BuildOutputInPackage Include="@(_ReferenceCopyLocalPaths)" TargetPath="%(_ReferenceCopyLocalPaths.DestinationSubDirectory)"/>
+        </ItemGroup>
+    </Target>
+    <!-- End of dotnet pack fix -->
 
     <!--
     <ItemGroup>
