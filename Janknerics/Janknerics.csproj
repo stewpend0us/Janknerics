@@ -9,7 +9,7 @@
         <!-- NuGet package properties -->
         <EnablePackageValidation>true</EnablePackageValidation>
         <PackageId>Janknerics</PackageId>
-        <Version>0.0.15</Version>
+        <Version>0.0.16</Version>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <RepositoryType>git</RepositoryType>
@@ -27,9 +27,6 @@
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <!--
-        <ImplicitUsings>enable</ImplicitUsings>
-        -->
         <NoWarn>NU5128</NoWarn>
     </PropertyGroup>
     
@@ -60,6 +57,7 @@
         <None Include="$(OutputPath)/$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
         <None Include="$(OutputPath)/Janknerics.Attributes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
         <None Include="$(PKGSmartFormat)/lib/netstandard2.0/SmartFormat.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+        <None Include="$(PKGZString)/lib/netstandard2.0/ZString.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
         
         <None Include="../README.md" Pack="true" PackagePath="/" />
         <None Include="../LICENSE" Pack="true" PackagePath="/" Visible="false"/>
